@@ -29,6 +29,7 @@ def update_assignments():
 
 def remove_completed():
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
+    st.balloons()
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
