@@ -32,7 +32,7 @@ def remove_completed():
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
-    if datetime.date(assignment['due_date']) < datetime.date.today():
+    if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
 
 #gui----------------------------------------------------------
