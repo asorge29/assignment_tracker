@@ -13,9 +13,11 @@ if 'temp' not in st.session_state:
     st.session_state.temp = []
 #functions----------------------------------------------------
 def add_class(name, late_work):
-    if name not in st.session_state.classrooms:
+    if name not in st.session_state.classrooms['Name']:
         st.session_state.classrooms['Name'].append(name)
         st.session_state.classrooms['Late Work'].append(late_work)
+    else:
+        st.error('Please enter an original name.')
 
 def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
@@ -29,6 +31,7 @@ def update_assignments():
 
 def remove_completed():
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
+    st.balloons()
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -38,7 +41,7 @@ for assignment in st.session_state.assignments:
 #gui----------------------------------------------------------
 st.sidebar.title('Classes')
 with st.sidebar.expander('New Class'):
-    new_class = st.text_input('Enter Class')
+    new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
@@ -49,9 +52,9 @@ with st.sidebar.expander('New Class'):
 st.title("Assignments")
 
 with st.sidebar.expander('New Assignment'):
-    new_title = st.text_input("Enter Title")
+    new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
-    new_due_date = st.date_input('Enter Due Date:', min_value=datetime.date.today(), max_value=(datetime.date.today()+relativedelta(months=6)))
+    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
     if st.button('Create!'):
@@ -71,7 +74,7 @@ if len(st.session_state.assignments) > 0:
             column_config={
                 'title':st.column_config.TextColumn(
                     'Title',
-                    max_chars=50,
+                    max_chars=100,
                     help='What is the name of the assignment?'
                 ),
                 'priority': st.column_config.SelectboxColumn(
@@ -81,7 +84,8 @@ if len(st.session_state.assignments) > 0:
                 ),
                 'due_date': st.column_config.DateColumn(
                     'Due Date',
-                    help='When is the assignment due?'
+                    help='When is the assignment due?',
+                    max_value=(datetime.date.today()+relativedelta(months=6))
                 ),
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
