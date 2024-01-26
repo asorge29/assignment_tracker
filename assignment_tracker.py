@@ -13,9 +13,11 @@ if 'temp' not in st.session_state:
     st.session_state.temp = []
 #functions----------------------------------------------------
 def add_class(name, late_work):
-    if name not in st.session_state.classrooms:
+    if name not in st.session_state.classrooms['Name']:
         st.session_state.classrooms['Name'].append(name)
         st.session_state.classrooms['Late Work'].append(late_work)
+    else:
+        st.error('Please enter an original name.')
 
 def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
