@@ -39,10 +39,10 @@ for assignment in st.session_state.assignments:
 st.sidebar.title('Classes')
 with st.sidebar.expander('New Class'):
     new_class = st.text_input('Enter Class')
-    late_work = st.checkbox(
+    '''late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
-    )
+    )'''
     if st.button('Create Class'):
         add_class(new_class, late_work)
 
