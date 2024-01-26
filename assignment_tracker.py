@@ -30,8 +30,10 @@ def update_assignments():
         st.session_state.assignments = new_data.to_dict(orient='records')
 
 def remove_completed():
+    old_amount = len(st.session_state.assignments)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
-    st.balloons()
+    if old_amount > len(st.session_state.assignments):
+        st.balloons()
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -59,9 +61,6 @@ with st.sidebar.expander('New Assignment'):
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
     if st.button('Create!'):
         create_assignment()
-
-for classroom in st.session_state.classrooms['Name']:
-    st.sidebar.button(classroom)
 
 if len(st.session_state.assignments) > 0:
     editing = st.toggle('Edit Mode', on_change=update_assignments)
