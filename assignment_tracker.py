@@ -41,7 +41,7 @@ for assignment in st.session_state.assignments:
 #gui----------------------------------------------------------
 st.sidebar.title('Classes')
 with st.sidebar.expander('New Class'):
-    new_class = st.text_input('Enter Class')
+    new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
@@ -52,7 +52,7 @@ with st.sidebar.expander('New Class'):
 st.title("Assignments")
 
 with st.sidebar.expander('New Assignment'):
-    new_title = st.text_input("Enter Title")
+    new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
     new_due_date = st.date_input('Enter Due Date:', min_value=datetime.date.today(), max_value=(datetime.date.today()+relativedelta(months=6)))
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
@@ -74,7 +74,7 @@ if len(st.session_state.assignments) > 0:
             column_config={
                 'title':st.column_config.TextColumn(
                     'Title',
-                    max_chars=50,
+                    max_chars=100,
                     help='What is the name of the assignment?'
                 ),
                 'priority': st.column_config.SelectboxColumn(
