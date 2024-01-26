@@ -54,7 +54,7 @@ st.title("Assignments")
 with st.sidebar.expander('New Assignment'):
     new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
-    new_due_date = st.date_input('Enter Due Date:', min_value=datetime.date.today(), max_value=(datetime.date.today()+relativedelta(months=6)))
+    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
     if st.button('Create!'):
@@ -84,7 +84,8 @@ if len(st.session_state.assignments) > 0:
                 ),
                 'due_date': st.column_config.DateColumn(
                     'Due Date',
-                    help='When is the assignment due?'
+                    help='When is the assignment due?',
+                    max_value=(datetime.date.today()+relativedelta(months=6))
                 ),
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
