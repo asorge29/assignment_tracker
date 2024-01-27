@@ -44,6 +44,7 @@ for assignment in st.session_state.assignments:
 st.set_page_config(
     page_title='Assignment Tracker',
     layout='wide',
+    page_icon='✏️',
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
         'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
