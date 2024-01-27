@@ -40,6 +40,16 @@ for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
 
+#page config--------------------------------------------------
+st.set_page_config(
+    page_title='Assignment Tracker',
+    layout='wide',
+    menu_items={
+        'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
+    }
+)
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignments'])
@@ -90,7 +100,8 @@ if len(st.session_state.assignments) > 0:
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
                     help='How long do you think it will take you to complete?',
-                    step=300
+                    step=300,
+                    format="HH:mm"
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
@@ -130,7 +141,8 @@ if len(st.session_state.assignments) > 0:
                 ),
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
-                    help='How long do you think it will take you to complete?'
+                    help='How long do you think it will take you to complete?',
+                    format="HH:mm"
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
