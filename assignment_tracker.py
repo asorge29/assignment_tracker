@@ -30,17 +30,30 @@ def update_assignments():
         st.session_state.assignments = new_data.to_dict(orient='records')
 
 def remove_completed():
+    old_amount = len(st.session_state.assignments)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
-    st.balloons()
+    if old_amount > len(st.session_state.assignments):
+        st.balloons()
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
 
+#page config--------------------------------------------------
+st.set_page_config(
+    page_title='Assignment Tracker',
+    layout='wide',
+    menu_items={
+        'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
+    }
+)
 #gui----------------------------------------------------------
-st.sidebar.title('Classes')
-with st.sidebar.expander('New Class'):
+st.sidebar.title('Create')
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignments'])
+with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
@@ -51,7 +64,7 @@ with st.sidebar.expander('New Class'):
 
 st.title("Assignments")
 
-with st.sidebar.expander('New Assignment'):
+with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
@@ -59,9 +72,6 @@ with st.sidebar.expander('New Assignment'):
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
     if st.button('Create!'):
         create_assignment()
-
-for classroom in st.session_state.classrooms['Name']:
-    st.sidebar.button(classroom)
 
 if len(st.session_state.assignments) > 0:
     editing = st.toggle('Edit Mode', on_change=update_assignments)
@@ -90,7 +100,8 @@ if len(st.session_state.assignments) > 0:
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
                     help='How long do you think it will take you to complete?',
-                    step=300
+                    step=300,
+                    format="HH:mm"
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
@@ -130,7 +141,8 @@ if len(st.session_state.assignments) > 0:
                 ),
                 'time_est': st.column_config.TimeColumn(
                     'Time Estimate(Hrs)',
-                    help='How long do you think it will take you to complete?'
+                    help='How long do you think it will take you to complete?',
+                    format="HH:mm"
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
