@@ -41,8 +41,9 @@ for assignment in st.session_state.assignments:
         assignment['overdue'] = True
 
 #gui----------------------------------------------------------
-st.sidebar.title('Classes')
-with st.sidebar.expander('New Class'):
+st.sidebar.title('Create')
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignments'])
+with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
@@ -53,7 +54,7 @@ with st.sidebar.expander('New Class'):
 
 st.title("Assignments")
 
-with st.sidebar.expander('New Assignment'):
+with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
