@@ -74,102 +74,105 @@ with sidebar_tabs[1]:
     if st.button('Create!'):
         create_assignment()
 
-if len(st.session_state.assignments) > 0:
-    editing = st.toggle('Edit Mode', on_change=update_assignments)
+main_tabs = st.tabs(['All'] +st.session_state.classrooms['Name'])
 
-    data = pd.DataFrame(st.session_state.assignments)
+with main_tabs[0]:
+    if len(st.session_state.assignments) > 0:
+        editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
 
-    if editing:
-        new_data = st.data_editor(
-            data,
-            column_config={
-                'title':st.column_config.TextColumn(
-                    'Title',
-                    max_chars=100,
-                    help='What is the name of the assignment?'
-                ),
-                'priority': st.column_config.SelectboxColumn(
-                    'Priority',
-                    options=['High', 'Medium', 'Low'],
-                    help='How important is this assignment to complete?'
-                ),
-                'due_date': st.column_config.DateColumn(
-                    'Due Date',
-                    help='When is the assignment due?',
-                    max_value=(datetime.date.today()+relativedelta(months=6))
-                ),
-                'time_est': st.column_config.TimeColumn(
-                    'Time Estimate(Hrs)',
-                    help='How long do you think it will take you to complete?',
-                    step=300,
-                    format="HH:mm"
-                ),
-                'class': st.column_config.SelectboxColumn(
-                    'Class',
-                    options=st.session_state.classrooms['Name'],
-                    help='What class is this assignment for?'
-                ),
-                'done': st.column_config.CheckboxColumn(
-                    'Done',
-                    help='Is the assignment done?'
-                ),
-                'overdue': st.column_config.CheckboxColumn(
-                    'Overdue',
-                    help='Is the assignment past its due date?'
-                )
-            },
-            disabled=['overdue'],
-            hide_index=True
-        )
+        data = pd.DataFrame(st.session_state.assignments)
+
+        if editing:
+            new_data = st.data_editor(
+                data,
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=100,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?',
+                        max_value=(datetime.date.today()+relativedelta(months=6))
+                    ),
+                    'time_est': st.column_config.TimeColumn(
+                        'Time Estimate(Hrs)',
+                        help='How long do you think it will take you to complete?',
+                        step=300,
+                        format="HH:mm"
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=st.session_state.classrooms['Name'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    )
+                },
+                disabled=['overdue'],
+                hide_index=True
+            )
+
+        else:
+            st.dataframe(
+                data,
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=50,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?'
+                    ),
+                    'time_est': st.column_config.TimeColumn(
+                        'Time Estimate(Hrs)',
+                        help='How long do you think it will take you to complete?',
+                        format="HH:mm"
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=st.session_state.classrooms['Name'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    ),
+                },
+                hide_index=True
+            )
+
+            st.button('Remove Completed Assignments', on_click=remove_completed)
+
+            st.download_button(
+                'Download Assignment Data',
+                help='Download as a file to keep as a backup or for use in other apps.',
+                data=data.to_csv(index=False).encode('utf-8'),
+                file_name='assignments.csv'
+            )
 
     else:
-        st.dataframe(
-            data,
-            column_config={
-                'title':st.column_config.TextColumn(
-                    'Title',
-                    max_chars=50,
-                    help='What is the name of the assignment?'
-                ),
-                'priority': st.column_config.SelectboxColumn(
-                    'Priority',
-                    options=['High', 'Medium', 'Low'],
-                    help='How important is this assignment to complete?'
-                ),
-                'due_date': st.column_config.DateColumn(
-                    'Due Date',
-                    help='When is the assignment due?'
-                ),
-                'time_est': st.column_config.TimeColumn(
-                    'Time Estimate(Hrs)',
-                    help='How long do you think it will take you to complete?',
-                    format="HH:mm"
-                ),
-                'class': st.column_config.SelectboxColumn(
-                    'Class',
-                    options=st.session_state.classrooms['Name'],
-                    help='What class is this assignment for?'
-                ),
-                'done': st.column_config.CheckboxColumn(
-                    'Done',
-                    help='Is the assignment done?'
-                ),
-                'overdue': st.column_config.CheckboxColumn(
-                    'Overdue',
-                    help='Is the assignment past its due date?'
-                ),
-            },
-            hide_index=True
-        )
-
-        st.button('Remove Completed Assignments', on_click=remove_completed)
-
-        st.download_button(
-            'Download Assignment Data',
-            help='Download as a file to keep as a backup or for use in other apps.',
-            data=data.to_csv(index=False).encode('utf-8'),
-            file_name='assignments.csv'
-        )
-
-else:
-    st.write('Create some assignments to get started!')
+        st.write('Create some assignments to get started!')
