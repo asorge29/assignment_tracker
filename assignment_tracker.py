@@ -9,13 +9,14 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
-if 'temp' not in st.session_state:
-    st.session_state.temp = []
+if 'tabs' not in st.session_state:
+    st.session_state.tabs = ['All']
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
         st.session_state.classrooms['Name'].append(name)
         st.session_state.classrooms['Late Work'].append(late_work)
+        st.session_state.tabs.append(name)
     else:
         st.error('Please enter an original name.')
 
@@ -74,7 +75,7 @@ with sidebar_tabs[1]:
     if st.button('Create!'):
         create_assignment()
 
-main_tabs = st.tabs(['All'] +st.session_state.classrooms['Name'])
+main_tabs = st.tabs(st.session_state.tabs)
 
 with main_tabs[0]:
     if len(st.session_state.assignments) > 0:
