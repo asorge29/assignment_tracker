@@ -9,13 +9,14 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
-if 'temp' not in st.session_state:
-    st.session_state.temp = []
+if 'tabs' not in st.session_state:
+    st.session_state.tabs = ['All']
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
         st.session_state.classrooms['Name'].append(name)
         st.session_state.classrooms['Late Work'].append(late_work)
+        st.session_state.tabs.append(name)
     else:
         st.error('Please enter an original name.')
 
@@ -72,59 +73,124 @@ with sidebar_tabs[1]:
     if st.button('Create!', key=1):
         create_assignment()
 
-st.title("Assignments")
+st.title('Assignments')
+        
+class_filter = st.selectbox('Filter by Class', st.session_state.classrooms['Name'], None)
 
-if len(st.session_state.assignments) > 0:
-    editing = st.toggle('Edit Mode', on_change=update_assignments)
+if class_filter == None:
+    if len(st.session_state.assignments) > 0:
+        editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
 
-    data = pd.DataFrame(st.session_state.assignments)
+        data = pd.DataFrame(st.session_state.assignments)
 
-    if editing:
-        data = st.data_editor(
-            data,
-            column_config={
-                'title':st.column_config.TextColumn(
-                    'Title',
-                    max_chars=100,
-                    help='What is the name of the assignment?'
-                ),
-                'priority': st.column_config.SelectboxColumn(
-                    'Priority',
-                    options=['High', 'Medium', 'Low'],
-                    help='How important is this assignment to complete?'
-                ),
-                'due_date': st.column_config.DateColumn(
-                    'Due Date',
-                    help='When is the assignment due?',
-                    max_value=(datetime.date.today()+relativedelta(months=6))
-                ),
-                'time_est': st.column_config.TimeColumn(
-                    'Time Estimate(Hrs)',
-                    help='How long do you think it will take you to complete?',
-                    step=300,
-                    format="HH:mm"
-                ),
-                'class': st.column_config.SelectboxColumn(
-                    'Class',
-                    options=st.session_state.classrooms['Name'],
-                    help='What class is this assignment for?'
-                ),
-                'done': st.column_config.CheckboxColumn(
-                    'Done',
-                    help='Is the assignment done?'
-                ),
-                'overdue': st.column_config.CheckboxColumn(
-                    'Overdue',
-                    help='Is the assignment past its due date?'
-                )
-            },
-            disabled=['overdue'],
-            hide_index=True
-        )
+        if editing:
+            new_data = st.data_editor(
+                data,
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=100,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?',
+                        max_value=(datetime.date.today()+relativedelta(months=6))
+                    ),
+                    'time_est': st.column_config.TimeColumn(
+                        'Time Estimate(Hrs)',
+                        help='How long do you think it will take you to complete?',
+                        step=300,
+                        format="HH:mm"
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=st.session_state.classrooms['Name'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    )
+                },
+                disabled=['overdue'],
+                hide_index=True
+            )
+
+        else:
+            st.dataframe(
+                data,
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=50,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?'
+                    ),
+                    'time_est': st.column_config.TimeColumn(
+                        'Time Estimate(Hrs)',
+                        help='How long do you think it will take you to complete?',
+                        format="HH:mm"
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=st.session_state.classrooms['Name'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    ),
+                },
+                hide_index=True
+            )
+
+            st.button('Remove Completed Assignments', on_click=remove_completed)
+
+            st.download_button(
+                'Download Assignment Data',
+                help='Download as a file to keep as a backup or for use in other apps.',
+                data=data.to_csv(index=False).encode('utf-8'),
+                file_name='assignments.csv'
+            )
 
     else:
+        st.write('Create some assignments to get started!')
+
+
+else:
+    has_assignments = False
+    for assignment in st.session_state.assignments:
+        if assignment['class'] == class_filter:
+            has_assignments = True
+            break
+    if has_assignments:
+        data = pd.DataFrame(st.session_state.assignments)
+        filtered_data = data[data['class'] == class_filter]
+
         st.dataframe(
-            data,
+            filtered_data,
             column_config={
                 'title':st.column_config.TextColumn(
                     'Title',
@@ -171,5 +237,5 @@ if len(st.session_state.assignments) > 0:
             file_name='assignments.csv'
         )
 
-else:
-    st.write('Create some assignments to get started!')
+    else:
+        st.write('You have no active assignments in this class.')
