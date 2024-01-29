@@ -75,9 +75,9 @@ with sidebar_tabs[1]:
     if st.button('Create!'):
         create_assignment()
 
-main_tabs = st.tabs(st.session_state.tabs)
+class_filter = st.selectbox('Filter by Class', st.session_state.classrooms['Name'], None)
 
-with main_tabs[0]:
+if class_filter == None:
     if len(st.session_state.assignments) > 0:
         editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
 
@@ -177,3 +177,64 @@ with main_tabs[0]:
 
     else:
         st.write('Create some assignments to get started!')
+
+else:
+    has_assignments = False
+    for assignment in st.session_state.assignments:
+        if assignment['class'] == class_filter:
+            has_assignments = True
+            break
+    if has_assignments:
+        data = pd.DataFrame(st.session_state.assignments)
+        filtered_data = data[data['class'] == class_filter]
+
+        st.dataframe(
+            filtered_data,
+            column_config={
+                'title':st.column_config.TextColumn(
+                    'Title',
+                    max_chars=50,
+                    help='What is the name of the assignment?'
+                ),
+                'priority': st.column_config.SelectboxColumn(
+                    'Priority',
+                    options=['High', 'Medium', 'Low'],
+                    help='How important is this assignment to complete?'
+                ),
+                'due_date': st.column_config.DateColumn(
+                    'Due Date',
+                    help='When is the assignment due?'
+                ),
+                'time_est': st.column_config.TimeColumn(
+                    'Time Estimate(Hrs)',
+                    help='How long do you think it will take you to complete?',
+                    format="HH:mm"
+                ),
+                'class': st.column_config.SelectboxColumn(
+                    'Class',
+                    options=st.session_state.classrooms['Name'],
+                    help='What class is this assignment for?'
+                ),
+                'done': st.column_config.CheckboxColumn(
+                    'Done',
+                    help='Is the assignment done?'
+                ),
+                'overdue': st.column_config.CheckboxColumn(
+                    'Overdue',
+                    help='Is the assignment past its due date?'
+                ),
+            },
+            hide_index=True
+        )
+
+        st.button('Remove Completed Assignments', on_click=remove_completed)
+
+        st.download_button(
+            'Download Assignment Data',
+            help='Download as a file to keep as a backup or for use in other apps.',
+            data=data.to_csv(index=False).encode('utf-8'),
+            file_name='assignments.csv'
+        )
+
+    else:
+        st.write('You have no active assignments in this class.')
