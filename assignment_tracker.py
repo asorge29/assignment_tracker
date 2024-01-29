@@ -25,9 +25,9 @@ def create_assignment():
     st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
 
 def update_assignments():
-    global new_data
+    global data
     if editing:
-        st.session_state.assignments = new_data.to_dict(orient='records')
+        st.session_state.assignments = data.to_dict(orient='records')
 
 def remove_completed():
     old_amount = len(st.session_state.assignments)
@@ -80,7 +80,7 @@ if len(st.session_state.assignments) > 0:
     data = pd.DataFrame(st.session_state.assignments)
 
     if editing:
-        new_data = st.data_editor(
+        data = st.data_editor(
             data,
             column_config={
                 'title':st.column_config.TextColumn(
