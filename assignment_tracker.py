@@ -25,9 +25,9 @@ def create_assignment():
     st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
 
 def update_assignments():
-    global new_data
+    global data
     if editing:
-        st.session_state.assignments = new_data.to_dict(orient='records')
+        st.session_state.assignments = data.to_dict(orient='records')
 
 def remove_completed():
     old_amount = len(st.session_state.assignments)
@@ -44,6 +44,7 @@ for assignment in st.session_state.assignments:
 st.set_page_config(
     page_title='Assignment Tracker',
     layout='wide',
+    page_icon='✏️',
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
         'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
@@ -52,17 +53,15 @@ st.set_page_config(
 )
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignments'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
     )
-    if st.button('Create Class'):
+    if st.button('Create!'):
         add_class(new_class, late_work)
-
-st.title("Assignments")
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
@@ -70,8 +69,10 @@ with sidebar_tabs[1]:
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
-    if st.button('Create!'):
+    if st.button('Create!', key=1):
         create_assignment()
+
+st.title("Assignments")
 
 if len(st.session_state.assignments) > 0:
     editing = st.toggle('Edit Mode', on_change=update_assignments)
@@ -79,7 +80,7 @@ if len(st.session_state.assignments) > 0:
     data = pd.DataFrame(st.session_state.assignments)
 
     if editing:
-        new_data = st.data_editor(
+        data = st.data_editor(
             data,
             column_config={
                 'title':st.column_config.TextColumn(
