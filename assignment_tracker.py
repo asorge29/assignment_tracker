@@ -53,17 +53,15 @@ st.set_page_config(
 )
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignments'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100)
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
     )
-    if st.button('Create Class'):
+    if st.button('Create!'):
         add_class(new_class, late_work)
-
-st.title("Assignments")
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
@@ -71,8 +69,10 @@ with sidebar_tabs[1]:
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
-    if st.button('Create!'):
+    if st.button('Create!', key=1):
         create_assignment()
+
+st.title("Assignments")
 
 if len(st.session_state.assignments) > 0:
     editing = st.toggle('Edit Mode', on_change=update_assignments)
