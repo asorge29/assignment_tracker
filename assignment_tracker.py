@@ -9,21 +9,26 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
-if 'tabs' not in st.session_state:
-    st.session_state.tabs = ['All']
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
-        st.session_state.classrooms['Name'].append(name)
-        st.session_state.classrooms['Late Work'].append(late_work)
-        st.session_state.tabs.append(name)
+        if len(name) > 0:
+            st.session_state.classrooms['Name'].append(name)
+            st.session_state.classrooms['Late Work'].append(late_work)
+        else:
+            st.error('Please enter a name.')
     else:
         st.error('Please enter an original name.')
 
 def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
-    #if new_title not in st.session_state.assignments['Title']:
-    st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
+    if new_title != '':
+        if new_classroom != None:
+            st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
+        else:
+            st.error('Please enter a classroom.')
+    else:
+        st.error('Please enter a title.')
 
 def update_assignments():
     global data
@@ -33,8 +38,14 @@ def update_assignments():
 def remove_completed():
     old_amount = len(st.session_state.assignments)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
-    if old_amount > len(st.session_state.assignments):
+    amount_removed = old_amount - len(st.session_state.assignments)
+    if amount_removed > 0:
+        st.toast(f'Removed {amount_removed} assignments.')
         st.balloons()
+        if len(st.session_state.assignments) == 0:
+            st.toast('Congradulations on completing all your assignments!')
+    else:
+        st.toast('No completed assignments to remove.')
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -56,26 +67,37 @@ st.set_page_config(
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
-    new_class = st.text_input('Enter Class', max_chars=100)
+    new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
     )
-    if st.button('Create!'):
+    if st.button('Create!', help='Create a new class.'):
         add_class(new_class, late_work)
 
+    st.write('Classes:')
+    if len(st.session_state.classrooms['Name']) > 0:
+        for classroom in st.session_state.classrooms['Name']:
+            class_index = st.session_state.classrooms['Name'].index(classroom)
+            if st.session_state.classrooms['Late Work'][class_index] == True:
+                st.success(classroom)
+            else:
+                st.error(classroom)
+    else:
+        st.info('No classes yet.')
+
 with sidebar_tabs[1]:
-    new_title = st.text_input("Enter Title", max_chars=100)
-    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
-    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
-    new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
-    new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
-    if st.button('Create!', key=1):
+    new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
+    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
+    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
+    new_time_estimate = st.time_input('Enter Time Estimate:', step=300, help='How long do you think this assignment will take?')
+    new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
+    if st.button('Create!', key=1, help='Create a new assignment.'):
         create_assignment()
 
 st.title('Assignments')
         
-class_filter = st.selectbox('Filter by Class', st.session_state.classrooms['Name'], None)
+class_filter = st.selectbox('Filter by Class', [None]+st.session_state.classrooms['Name'], None)
 
 if class_filter == None:
     if len(st.session_state.assignments) > 0:
@@ -84,7 +106,7 @@ if class_filter == None:
         data = pd.DataFrame(st.session_state.assignments)
 
         if editing:
-            new_data = st.data_editor(
+            data = st.data_editor(
                 data,
                 column_config={
                     'title':st.column_config.TextColumn(
@@ -166,7 +188,7 @@ if class_filter == None:
                 hide_index=True
             )
 
-            st.button('Remove Completed Assignments', on_click=remove_completed)
+            st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
             st.download_button(
                 'Download Assignment Data',
@@ -178,8 +200,13 @@ if class_filter == None:
     else:
         st.write('Create some assignments to get started!')
 
-
 else:
+    class_index = (st.session_state.classrooms['Name'].index(class_filter))
+    if st.session_state.classrooms['Late Work'][class_index] == True:
+        st.success('Late Work Allowed!')
+    else:
+        st.error('Late Work Not Allowed!')
+
     has_assignments = False
     for assignment in st.session_state.assignments:
         if assignment['class'] == class_filter:
