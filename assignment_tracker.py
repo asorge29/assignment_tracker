@@ -9,8 +9,6 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
-if 'tabs' not in st.session_state:
-    st.session_state.tabs = ['All']
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
@@ -22,7 +20,6 @@ def add_class(name, late_work):
 
 def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
-    #if new_title not in st.session_state.assignments['Title']:
     st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
 
 def update_assignments():
