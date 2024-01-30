@@ -38,8 +38,14 @@ def update_assignments():
 def remove_completed():
     old_amount = len(st.session_state.assignments)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
-    if old_amount > len(st.session_state.assignments):
+    amount_removed = old_amount - len(st.session_state.assignments)
+    if amount_removed > 0:
+        st.toast(f'Removed {amount_removed} assignments.')
         st.balloons()
+        if len(st.session_state.assignments) == 0:
+            st.toast('Congradulations on completing all your assignments!')
+    else:
+        st.toast('No completed assignments to remove.')
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -61,12 +67,12 @@ st.set_page_config(
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
-    new_class = st.text_input('Enter Class', max_chars=100)
+    new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
     late_work = st.checkbox(
         'Late Work Allowed',
         help='Does this class accept late work?'
     )
-    if st.button('Create!'):
+    if st.button('Create!', help='Create a new class.'):
         add_class(new_class, late_work)
 
     st.write('Classes:')
@@ -81,12 +87,12 @@ with sidebar_tabs[0]:
         st.info('No classes yet.')
 
 with sidebar_tabs[1]:
-    new_title = st.text_input("Enter Title", max_chars=100)
-    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
-    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)))
-    new_time_estimate = st.time_input('Enter Time Estimate:', step=300)
-    new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'])
-    if st.button('Create!', key=1):
+    new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
+    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
+    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
+    new_time_estimate = st.time_input('Enter Time Estimate:', step=300, help='How long do you think this assignment will take?')
+    new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
+    if st.button('Create!', key=1, help='Create a new assignment.'):
         create_assignment()
 
 st.title('Assignments')
@@ -100,7 +106,7 @@ if class_filter == None:
         data = pd.DataFrame(st.session_state.assignments)
 
         if editing:
-            new_data = st.data_editor(
+            data = st.data_editor(
                 data,
                 column_config={
                     'title':st.column_config.TextColumn(
@@ -182,7 +188,7 @@ if class_filter == None:
                 hide_index=True
             )
 
-            st.button('Remove Completed Assignments', on_click=remove_completed)
+            st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
             st.download_button(
                 'Download Assignment Data',
@@ -200,6 +206,7 @@ else:
         st.success('Late Work Allowed!')
     else:
         st.error('Late Work Not Allowed!')
+
     has_assignments = False
     for assignment in st.session_state.assignments:
         if assignment['class'] == class_filter:
