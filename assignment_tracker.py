@@ -9,6 +9,9 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
+if 'upload_key' not in st.session_state:
+    st.session_state.upload_key = 0
+
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
@@ -95,7 +98,7 @@ with sidebar_tabs[1]:
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
     new_time_estimate = st.time_input('Enter Time Estimate:', step=300, help='How long do you think this assignment will take?')
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
-    if st.button('Create!', key=1, help='Create a new assignment.'):
+    if st.button('Create!', key=-1, help='Create a new assignment.'):
         create_assignment()
 
 with sidebar_tabs[2]:
@@ -106,6 +109,14 @@ with sidebar_tabs[2]:
     data=data.to_csv(index=False).encode('utf-8'),
     file_name='assignments.csv'
     )
+
+    file_import = st.file_uploader('Import Assignments from CSV', ['.csv'], False, help='Import a file containing your assignments.', key=st.session_state.upload_key)
+    if file_import is not None:
+        import_data = pd.read_csv(file_import)
+        st.session_state.assignments = import_data.to_dict(orient='records')
+        for assignment in st.session_state.assignments:
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        st.session_state.upload_key += 1
 
 st.title('Assignments')
         
