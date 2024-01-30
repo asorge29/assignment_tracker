@@ -12,14 +12,23 @@ if 'assignments' not in st.session_state:
 #functions----------------------------------------------------
 def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
-        st.session_state.classrooms['Name'].append(name)
-        st.session_state.classrooms['Late Work'].append(late_work)
+        if len(name) > 0:
+            st.session_state.classrooms['Name'].append(name)
+            st.session_state.classrooms['Late Work'].append(late_work)
+        else:
+            st.error('Please enter a name.')
     else:
         st.error('Please enter an original name.')
 
 def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
-    st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
+    if new_title != '':
+        if new_classroom != None:
+            st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
+        else:
+            st.error('Please enter a classroom.')
+    else:
+        st.error('Please enter a title.')
 
 def update_assignments():
     global data
@@ -61,12 +70,15 @@ with sidebar_tabs[0]:
         add_class(new_class, late_work)
 
     st.write('Classes:')
-    for classroom in st.session_state.classrooms['Name']:
-        class_index = st.session_state.classrooms['Name'].index(classroom)
-        if st.session_state.classrooms['Late Work'][class_index] == True:
-            st.success(classroom)
-        else:
-            st.error(classroom)
+    if len(st.session_state.classrooms['Name']) > 0:
+        for classroom in st.session_state.classrooms['Name']:
+            class_index = st.session_state.classrooms['Name'].index(classroom)
+            if st.session_state.classrooms['Late Work'][class_index] == True:
+                st.success(classroom)
+            else:
+                st.error(classroom)
+    else:
+        st.info('No classes yet.')
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
