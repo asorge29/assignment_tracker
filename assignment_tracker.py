@@ -96,7 +96,7 @@ with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
-    new_time_estimate = st.time_input('Enter Time Estimate:', step=300, help='How long do you think this assignment will take?')
+    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=0, max_value=360)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
     if st.button('Create!', key=-1, help='Create a new assignment.'):
         create_assignment()
@@ -147,11 +147,11 @@ if class_filter == None:
                         help='When is the assignment due?',
                         max_value=(datetime.date.today()+relativedelta(months=6))
                     ),
-                    'time_est': st.column_config.TimeColumn(
-                        'Time Estimate(Hrs)',
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
                         help='How long do you think it will take you to complete?',
-                        step=300,
-                        format="HH:mm"
+                        step=5,
+                        format='%d minutes'
                     ),
                     'class': st.column_config.SelectboxColumn(
                         'Class',
@@ -189,10 +189,11 @@ if class_filter == None:
                         'Due Date',
                         help='When is the assignment due?'
                     ),
-                    'time_est': st.column_config.TimeColumn(
-                        'Time Estimate(Hrs)',
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
                         help='How long do you think it will take you to complete?',
-                        format="HH:mm"
+                        step=5,
+                        format='%d minutes'
                     ),
                     'class': st.column_config.SelectboxColumn(
                         'Class',
@@ -249,10 +250,11 @@ else:
                     'Due Date',
                     help='When is the assignment due?'
                 ),
-                'time_est': st.column_config.TimeColumn(
-                    'Time Estimate(Hrs)',
+                'time_est': st.column_config.NumberColumn(
+                    'Time Estimate',
                     help='How long do you think it will take you to complete?',
-                    format="HH:mm"
+                    step=5,
+                    format='%d minutes'
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
