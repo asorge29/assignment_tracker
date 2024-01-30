@@ -24,7 +24,10 @@ def create_assignment():
     global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
     if new_title != '':
         if new_classroom != None:
-            st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
+            if new_due_date < datetime.date.today():
+                st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':True})
+            else:
+                st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
         else:
             st.error('Please enter a classroom.')
     else:
