@@ -68,7 +68,7 @@ st.set_page_config(
 )
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
 with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
     late_work = st.checkbox(
@@ -97,6 +97,15 @@ with sidebar_tabs[1]:
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
     if st.button('Create!', key=1, help='Create a new assignment.'):
         create_assignment()
+
+with sidebar_tabs[2]:
+    data = pd.DataFrame(st.session_state.assignments)
+    st.download_button(
+    'Download Assignment Data',
+    help='Download as a file to keep as a backup or for use in other apps.',
+    data=data.to_csv(index=False).encode('utf-8'),
+    file_name='assignments.csv'
+    )
 
 st.title('Assignments')
         
@@ -193,13 +202,6 @@ if class_filter == None:
 
             st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
-            st.download_button(
-                'Download Assignment Data',
-                help='Download as a file to keep as a backup or for use in other apps.',
-                data=data.to_csv(index=False).encode('utf-8'),
-                file_name='assignments.csv'
-            )
-
     else:
         st.write('Create some assignments to get started!')
 
@@ -259,13 +261,6 @@ else:
         )
 
         st.button('Remove Completed Assignments', on_click=remove_completed)
-
-        st.download_button(
-            'Download Assignment Data',
-            help='Download as a file to keep as a backup or for use in other apps.',
-            data=data.to_csv(index=False).encode('utf-8'),
-            file_name='assignments.csv'
-        )
 
     else:
         st.write('You have no active assignments in this class.')
