@@ -14,7 +14,6 @@ def add_class(name, late_work):
     if name not in st.session_state.classrooms['Name']:
         st.session_state.classrooms['Name'].append(name)
         st.session_state.classrooms['Late Work'].append(late_work)
-        st.session_state.tabs.append(name)
     else:
         st.error('Please enter an original name.')
 
@@ -61,6 +60,14 @@ with sidebar_tabs[0]:
     if st.button('Create!'):
         add_class(new_class, late_work)
 
+    st.write('Classes:')
+    for classroom in st.session_state.classrooms['Name']:
+        class_index = st.session_state.classrooms['Name'].index(classroom)
+        if st.session_state.classrooms['Late Work'][class_index] == True:
+            st.success(classroom)
+        else:
+            st.error(classroom)
+
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100)
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'])
@@ -72,7 +79,7 @@ with sidebar_tabs[1]:
 
 st.title('Assignments')
         
-class_filter = st.selectbox('Filter by Class', st.session_state.classrooms['Name'], None)
+class_filter = st.selectbox('Filter by Class', [None]+st.session_state.classrooms['Name'], None)
 
 if class_filter == None:
     if len(st.session_state.assignments) > 0:
@@ -175,8 +182,12 @@ if class_filter == None:
     else:
         st.write('Create some assignments to get started!')
 
-
 else:
+    class_index = (st.session_state.classrooms['Name'].index(class_filter))
+    if st.session_state.classrooms['Late Work'][class_index] == True:
+        st.success('Late Work Allowed!')
+    else:
+        st.error('Late Work Not Allowed!')
     has_assignments = False
     for assignment in st.session_state.assignments:
         if assignment['class'] == class_filter:
