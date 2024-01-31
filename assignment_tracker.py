@@ -126,6 +126,7 @@ if class_filter == None:
         if editing:
             data = st.data_editor(
                 data,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
@@ -169,6 +170,7 @@ if class_filter == None:
         else:
             st.dataframe(
                 data,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
@@ -230,6 +232,7 @@ else:
 
         st.dataframe(
             filtered_data,
+            column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
             column_config={
                 'title':st.column_config.TextColumn(
                     'Title',
