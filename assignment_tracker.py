@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
+import hashlib
+import io
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[]}
@@ -29,6 +31,11 @@ def remove_completed():
             st.toast('Congradulations on completing all your assignments!')
     else:
         st.toast('No completed assignments to remove.')
+
+def calculate_hash(data):
+    sha256 = hashlib.sha256()
+    sha256.update(data.encode('utf-8'))
+    return sha256.hexdigest()
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -102,20 +109,35 @@ with sidebar_tabs[1]:
 
 with sidebar_tabs[2]:
     data = pd.DataFrame(st.session_state.assignments)
+    hash_before_export = calculate_hash(data.to_csv(index=False))
+    csv_data_with_hash = data.to_csv(index=False) + f"\n# Hash: {hash_before_export}"
     st.download_button(
-    'Download Assignment Data',
-    help='Download as a file to keep as a backup or for use in other apps.',
-    data=data.to_csv(index=False).encode('utf-8'),
-    file_name='assignments.csv'
+        'Download Assignment Data',
+        help='Download as a file to keep as a backup or for use in other apps.',
+        data=csv_data_with_hash.encode('utf-8'),
+        file_name='assignments.csv'
     )
 
     file_import = st.file_uploader('Import Assignments from CSV', ['.csv'], False, help='Import a file containing your assignments.', key=st.session_state.upload_key)
     if file_import is not None:
-        import_data = pd.read_csv(file_import)
-        st.session_state.assignments = import_data.to_dict(orient='records')
-        for assignment in st.session_state.assignments:
-            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        st.session_state.upload_key += 1
+        imported_lines = file_import.getvalue().decode('utf-8').split('\n')
+        if len(imported_lines) > 1:
+            hash_before_import = imported_lines[-1].replace('# Hash: ', '')
+            modified_csv_data = '\n'.join(imported_lines[:-1])
+            hash_after_import = calculate_hash(modified_csv_data)
+            if hash_before_import is not None and hash_before_import == hash_after_import:
+                try:
+                    import_data = pd.read_csv(io.StringIO(modified_csv_data), comment='#')
+                    st.session_state.assignments = import_data.to_dict(orient='records')
+                    for assignment in st.session_state.assignments:
+                        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+                    st.session_state.upload_key += 1
+                except pd.errors.EmptyDataError:
+                    st.error('The CSV does not contain data.')
+            else:
+                st.error('Error: The imported CSV file has been tampered with or does not contain a valid hash.')
+        else:
+            None
 
 st.title('Assignments')
         
