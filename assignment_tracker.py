@@ -9,27 +9,10 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
 
+if 'upload_key' not in st.session_state:
+    st.session_state.upload_key = 0
+
 #functions----------------------------------------------------
-def add_class(name, late_work):
-    if name not in st.session_state.classrooms['Name']:
-        if len(name) > 0:
-            st.session_state.classrooms['Name'].append(name)
-            st.session_state.classrooms['Late Work'].append(late_work)
-        else:
-            st.error('Please enter a name.')
-    else:
-        st.error('Please enter an original name.')
-
-def create_assignment():
-    global new_title, new_priority, new_due_date, new_time_estimate, new_classroom
-    if new_title != '':
-        if new_classroom != None:
-            st.session_state.assignments.append({'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False})
-        else:
-            st.error('Please enter a classroom.')
-    else:
-        st.error('Please enter a title.')
-
 def update_assignments():
     global data
     if editing:
@@ -65,7 +48,7 @@ st.set_page_config(
 )
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
 with sidebar_tabs[0]:
     new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
     late_work = st.checkbox(
@@ -73,16 +56,27 @@ with sidebar_tabs[0]:
         help='Does this class accept late work?'
     )
     if st.button('Create!', help='Create a new class.'):
-        add_class(new_class, late_work)
+        if new_class not in st.session_state.classrooms['Name']:
+            if len(new_class) > 0:
+                st.session_state.classrooms['Name'].append(new_class)
+                st.session_state.classrooms['Late Work'].append(late_work)
+            else:
+                st.error('Please enter a name.')
+        else:
+            st.error('Please enter an original name.')
 
     st.write('Classes:')
     if len(st.session_state.classrooms['Name']) > 0:
         for classroom in st.session_state.classrooms['Name']:
+            count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
+            for assignment in st.session_state.assignments:
+                if assignment['class'] == classroom:
+                    count += 1
             if st.session_state.classrooms['Late Work'][class_index] == True:
-                st.success(classroom)
+                st.success(f'{classroom}: {count} Assignments')
             else:
-                st.error(classroom)
+                st.error(f'{classroom}: {count} Assignments')
     else:
         st.info('No classes yet.')
 
@@ -90,10 +84,38 @@ with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
-    new_time_estimate = st.time_input('Enter Time Estimate:', step=300, help='How long do you think this assignment will take?')
+    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=360, value=30)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
-    if st.button('Create!', key=1, help='Create a new assignment.'):
-        create_assignment()
+    if st.button('Create!', key=-1, help='Create a new assignment.'):
+        if new_title != '':
+            if new_classroom != None:
+                new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False, 'late_allowed':False}
+                if new_due_date < datetime.date.today():
+                    new_assignment['overdue'] = True
+                if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
+                    new_assignment['late_allowed'] = True
+                st.session_state.assignments.append(new_assignment)
+            else:
+                st.error('Please enter a classroom.')
+        else:
+            st.error('Please enter a title.')
+
+with sidebar_tabs[2]:
+    data = pd.DataFrame(st.session_state.assignments)
+    st.download_button(
+    'Download Assignment Data',
+    help='Download as a file to keep as a backup or for use in other apps.',
+    data=data.to_csv(index=False).encode('utf-8'),
+    file_name='assignments.csv'
+    )
+
+    file_import = st.file_uploader('Import Assignments from CSV', ['.csv'], False, help='Import a file containing your assignments.', key=st.session_state.upload_key)
+    if file_import is not None:
+        import_data = pd.read_csv(file_import)
+        st.session_state.assignments = import_data.to_dict(orient='records')
+        for assignment in st.session_state.assignments:
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        st.session_state.upload_key += 1
 
 st.title('Assignments')
         
@@ -108,6 +130,7 @@ if class_filter == None:
         if editing:
             data = st.data_editor(
                 data,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
@@ -124,11 +147,11 @@ if class_filter == None:
                         help='When is the assignment due?',
                         max_value=(datetime.date.today()+relativedelta(months=6))
                     ),
-                    'time_est': st.column_config.TimeColumn(
-                        'Time Estimate(Hrs)',
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
                         help='How long do you think it will take you to complete?',
-                        step=300,
-                        format="HH:mm"
+                        step=5,
+                        format='%d minutes'
                     ),
                     'class': st.column_config.SelectboxColumn(
                         'Class',
@@ -151,6 +174,7 @@ if class_filter == None:
         else:
             st.dataframe(
                 data,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
@@ -166,10 +190,11 @@ if class_filter == None:
                         'Due Date',
                         help='When is the assignment due?'
                     ),
-                    'time_est': st.column_config.TimeColumn(
-                        'Time Estimate(Hrs)',
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
                         help='How long do you think it will take you to complete?',
-                        format="HH:mm"
+                        step=5,
+                        format='%d minutes'
                     ),
                     'class': st.column_config.SelectboxColumn(
                         'Class',
@@ -189,13 +214,6 @@ if class_filter == None:
             )
 
             st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
-
-            st.download_button(
-                'Download Assignment Data',
-                help='Download as a file to keep as a backup or for use in other apps.',
-                data=data.to_csv(index=False).encode('utf-8'),
-                file_name='assignments.csv'
-            )
 
     else:
         st.write('Create some assignments to get started!')
@@ -218,6 +236,7 @@ else:
 
         st.dataframe(
             filtered_data,
+            column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
             column_config={
                 'title':st.column_config.TextColumn(
                     'Title',
@@ -233,10 +252,11 @@ else:
                     'Due Date',
                     help='When is the assignment due?'
                 ),
-                'time_est': st.column_config.TimeColumn(
-                    'Time Estimate(Hrs)',
+                'time_est': st.column_config.NumberColumn(
+                    'Time Estimate',
                     help='How long do you think it will take you to complete?',
-                    format="HH:mm"
+                    step=5,
+                    format='%d minutes'
                 ),
                 'class': st.column_config.SelectboxColumn(
                     'Class',
@@ -256,13 +276,6 @@ else:
         )
 
         st.button('Remove Completed Assignments', on_click=remove_completed)
-
-        st.download_button(
-            'Download Assignment Data',
-            help='Download as a file to keep as a backup or for use in other apps.',
-            data=data.to_csv(index=False).encode('utf-8'),
-            file_name='assignments.csv'
-        )
 
     else:
         st.write('You have no active assignments in this class.')
