@@ -68,11 +68,15 @@ with sidebar_tabs[0]:
     st.write('Classes:')
     if len(st.session_state.classrooms['Name']) > 0:
         for classroom in st.session_state.classrooms['Name']:
+            count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
+            for assignment in st.session_state.assignments:
+                if assignment['class'] == classroom:
+                    count += 1
             if st.session_state.classrooms['Late Work'][class_index] == True:
-                st.success(classroom)
+                st.success(f'{classroom}: {count} Assignments')
             else:
-                st.error(classroom)
+                st.error(f'{classroom}: {count} Assignments')
     else:
         st.info('No classes yet.')
 
