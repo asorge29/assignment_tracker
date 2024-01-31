@@ -47,7 +47,6 @@ st.set_page_config(
     }
 )
 #gui----------------------------------------------------------
-st.write(st.session_state.classrooms)
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
 with sidebar_tabs[0]:
