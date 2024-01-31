@@ -85,7 +85,7 @@ with sidebar_tabs[0]:
             else:
                 st.error(f'{classroom}: {count} Assignments')
     else:
-        st.info('No classes yet.')
+        st.warning('No classes yet.')
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
