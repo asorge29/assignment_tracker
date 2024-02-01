@@ -14,6 +14,9 @@ if 'assignments' not in st.session_state:
 if 'upload_key' not in st.session_state:
     st.session_state.upload_key = 0
 
+if 'class_input' not in st.session_state:
+    st.session_state.class_input = ''
+
 #functions----------------------------------------------------
 def update_assignments():
     global data
@@ -57,20 +60,21 @@ st.set_page_config(
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
 with sidebar_tabs[0]:
-    new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
-    late_work = st.checkbox(
-        'Late Work Allowed',
-        help='Does this class accept late work?'
-    )
-    if st.button('Create!', help='Create a new class.'):
-        if new_class not in st.session_state.classrooms['Name']:
-            if len(new_class) > 0:
-                st.session_state.classrooms['Name'].append(new_class)
-                st.session_state.classrooms['Late Work'].append(late_work)
+    with st.form('class_form', clear_on_submit=True):
+        new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.', key='class_input')
+        late_work = st.checkbox(
+            'Late Work Allowed',
+            help='Does this class accept late work?'
+        )
+        if st.form_submit_button('Create!', help='Create a new class.'):
+            if new_class not in st.session_state.classrooms['Name']:
+                if len(new_class) > 0:
+                    st.session_state.classrooms['Name'].append(new_class)
+                    st.session_state.classrooms['Late Work'].append(late_work)
+                else:
+                    st.error('Please enter a name.')
             else:
-                st.error('Please enter a name.')
-        else:
-            st.error('Please enter an original name.')
+                st.error('Please enter an original name.')
 
     st.write('Classes:')
     if len(st.session_state.classrooms['Name']) > 0:
@@ -88,24 +92,25 @@ with sidebar_tabs[0]:
         st.warning('No classes yet.')
 
 with sidebar_tabs[1]:
-    new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
-    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
-    new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
-    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
-    new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
-    if st.button('Create!', key=-1, help='Create a new assignment.'):
-        if new_title != '':
-            if new_classroom != None:
-                new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False, 'late_allowed':False}
-                if new_due_date < datetime.date.today():
-                    new_assignment['overdue'] = True
-                if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
-                    new_assignment['late_allowed'] = True
-                st.session_state.assignments.append(new_assignment)
+    with st.form('Assignment_form', clear_on_submit=True):
+        new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
+        new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
+        new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
+        new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
+        new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
+        if st.form_submit_button('Create!', help='Create a new assignment.'):
+            if new_title != '':
+                if new_classroom != None:
+                    new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False, 'late_allowed':False}
+                    if new_due_date < datetime.date.today():
+                        new_assignment['overdue'] = True
+                    if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
+                        new_assignment['late_allowed'] = True
+                    st.session_state.assignments.append(new_assignment)
+                else:
+                    st.error('Please enter a classroom.')
             else:
-                st.error('Please enter a classroom.')
-        else:
-            st.error('Please enter a title.')
+                st.error('Please enter a title.')
 
 with sidebar_tabs[2]:
     data = pd.DataFrame(st.session_state.assignments)
