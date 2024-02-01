@@ -6,7 +6,7 @@ import hashlib
 import io
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
-    st.session_state.classrooms = {"Name":[], 'Late Work':[]}
+    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
@@ -42,6 +42,13 @@ for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
 
+for assignment in st.session_state.assignments:
+    if assignment['class'] not in st.session_state.classrooms['Name']:
+        st.session_state.classrooms['Name'].append(assignment['class'])
+        st.session_state.classrooms['Late Work'].append(assignment['late_allowed'])
+
+st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -63,13 +70,19 @@ with sidebar_tabs[0]:
             'Late Work Allowed',
             help='Does this class accept late work?'
         )
+        new_period = st.number_input('Period/Order:', min_value=0, max_value=25)
         if st.form_submit_button('Create!', help='Create a new class.'):
             if new_class not in st.session_state.classrooms['Name']:
-                if len(new_class) > 0:
-                    st.session_state.classrooms['Name'].append(new_class)
-                    st.session_state.classrooms['Late Work'].append(late_work)
+                if new_period not in st.session_state.classrooms['Period']:
+                    if len(new_class) > 0:
+                        st.session_state.classrooms['Name'].append(new_class)
+                        st.session_state.classrooms['Late Work'].append(late_work)
+                        st.session_state.classrooms['Period'].append(new_period)
+                        st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+                    else:
+                        st.error('Please enter a name.')
                 else:
-                    st.error('Please enter a name.')
+                    st.error('Please enter an original period.')
             else:
                 st.error('Please enter an original name.')
 
@@ -79,7 +92,7 @@ with sidebar_tabs[0]:
             count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
             for assignment in st.session_state.assignments:
-                if assignment['class'] == classroom and assignment['done']:
+                if assignment['class'] == classroom and not assignment['done']:
                     count += 1
             if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
@@ -137,6 +150,7 @@ with sidebar_tabs[2]:
                     for assignment in st.session_state.assignments:
                         assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
                     st.session_state.upload_key += 1
+                    
                 except pd.errors.EmptyDataError:
                     st.error('The CSV does not contain data.')
             else:
@@ -170,7 +184,7 @@ if class_filter == None:
                         options=['High', 'Medium', 'Low'],
                         help='How important is this assignment to complete?'
                     ),
-                    'link': st.column_config.LinkColumn(
+                    'link': st.column_config.Column(
                         'Link',
                         help='Link to this assignment.',
                         width='medium'
@@ -324,3 +338,5 @@ else:
 
     else:
         st.warning('You have no active assignments in this class.')
+
+#TODO add class order to assignment data and keep hidden
