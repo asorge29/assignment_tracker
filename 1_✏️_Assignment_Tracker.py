@@ -14,9 +14,6 @@ if 'assignments' not in st.session_state:
 if 'upload_key' not in st.session_state:
     st.session_state.upload_key = 0
 
-if 'class_input' not in st.session_state:
-    st.session_state.class_input = ''
-
 #functions----------------------------------------------------
 def update_assignments():
     global data
@@ -61,7 +58,7 @@ st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
 with sidebar_tabs[0]:
     with st.form('class_form', clear_on_submit=True):
-        new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.', key='class_input')
+        new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
         late_work = st.checkbox(
             'Late Work Allowed',
             help='Does this class accept late work?'
