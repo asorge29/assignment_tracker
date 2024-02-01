@@ -339,5 +339,3 @@ else:
 
     else:
         st.warning('You have no active assignments in this class.')
-
-#TODO add class order to assignment data and keep hidden
