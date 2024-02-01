@@ -50,7 +50,7 @@ st.set_page_config(
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
         'Get Help':'https://assignment-tracker.streamlit.app/Tutorial',
-        'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
+        'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
     }
 )
 #gui----------------------------------------------------------
