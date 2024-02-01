@@ -6,7 +6,7 @@ import hashlib
 import io
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
-    st.session_state.classrooms = {"Name":[], 'Late Work':[]}
+    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
@@ -42,6 +42,14 @@ for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
 
+for assignment in st.session_state.assignments:
+    if assignment['class'] not in st.session_state.classrooms['Name']:
+        st.session_state.classrooms['Name'].append(assignment['class'])
+        st.session_state.classrooms['Late Work'].append(assignment['late_allowed'])
+        st.session_state.classrooms['Period'].append(assignment['period'])
+
+st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -50,7 +58,7 @@ st.set_page_config(
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
         'Get Help':'https://assignment-tracker.streamlit.app/Tutorial',
-        'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
+        'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
     }
 )
 #gui----------------------------------------------------------
@@ -63,13 +71,19 @@ with sidebar_tabs[0]:
             'Late Work Allowed',
             help='Does this class accept late work?'
         )
+        new_period = st.number_input('Period/Order:', min_value=0, max_value=25)
         if st.form_submit_button('Create!', help='Create a new class.'):
             if new_class not in st.session_state.classrooms['Name']:
-                if len(new_class) > 0:
-                    st.session_state.classrooms['Name'].append(new_class)
-                    st.session_state.classrooms['Late Work'].append(late_work)
+                if new_period not in st.session_state.classrooms['Period']:
+                    if len(new_class) > 0:
+                        st.session_state.classrooms['Name'].append(new_class)
+                        st.session_state.classrooms['Late Work'].append(late_work)
+                        st.session_state.classrooms['Period'].append(new_period)
+                        st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+                    else:
+                        st.error('Please enter a name.')
                 else:
-                    st.error('Please enter a name.')
+                    st.error('Please enter an original period.')
             else:
                 st.error('Please enter an original name.')
 
@@ -79,7 +93,7 @@ with sidebar_tabs[0]:
             count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
             for assignment in st.session_state.assignments:
-                if assignment['class'] == classroom and assignment['done']:
+                if assignment['class'] == classroom and not assignment['done']:
                     count += 1
             if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
@@ -99,13 +113,14 @@ with sidebar_tabs[1]:
         if st.form_submit_button('Create!', help='Create a new assignment.'):
             if new_title != '':
                 if new_classroom != None:
-                    new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'link':new_link, 'done':False, 'overdue':False, 'late_allowed':False}
+                    new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'link':new_link, 'done':False, 'overdue':False, 'late_allowed':False, 'period':0}
                     if new_due_date < datetime.date.today():
                         new_assignment['overdue'] = True
                     if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
                         new_assignment['late_allowed'] = True
                     if len(new_link) < 2:
                         new_assignment['link'] = None
+                    new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
                     st.session_state.assignments.append(new_assignment)
                 else:
                     st.error('Please enter a classroom.')
@@ -136,7 +151,7 @@ with sidebar_tabs[2]:
                     st.session_state.assignments = import_data.to_dict(orient='records')
                     for assignment in st.session_state.assignments:
                         assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-                    st.session_state.upload_key += 1
+                    st.session_state.upload_key += 1 
                 except pd.errors.EmptyDataError:
                     st.error('The CSV does not contain data.')
             else:
@@ -170,7 +185,7 @@ if class_filter == None:
                         options=['High', 'Medium', 'Low'],
                         help='How important is this assignment to complete?'
                     ),
-                    'link': st.column_config.LinkColumn(
+                    'link': st.column_config.Column(
                         'Link',
                         help='Link to this assignment.',
                         width='medium'
