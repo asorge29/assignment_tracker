@@ -49,7 +49,7 @@ st.set_page_config(
     page_icon='✏️',
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
-        'Get Help':'https://assignmenttracker.streamlit.app/tutorial',
+        'Get Help':'https://assignment-tracker.streamlit.app/Tutorial',
         'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
     }
 )
@@ -95,14 +95,17 @@ with sidebar_tabs[1]:
         new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
         new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
         new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
+        new_link = st.text_input('Link to assignment (Optional):')
         if st.form_submit_button('Create!', help='Create a new assignment.'):
             if new_title != '':
                 if new_classroom != None:
-                    new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'done':False, 'overdue':False, 'late_allowed':False}
+                    new_assignment = {'title':new_title, 'priority':new_priority, 'due_date':new_due_date, 'time_est':new_time_estimate, 'class':new_classroom, 'link':new_link, 'done':False, 'overdue':False, 'late_allowed':False}
                     if new_due_date < datetime.date.today():
                         new_assignment['overdue'] = True
                     if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
                         new_assignment['late_allowed'] = True
+                    if len(new_link) < 2:
+                        new_assignment['link'] = None
                     st.session_state.assignments.append(new_assignment)
                 else:
                     st.error('Please enter a classroom.')
@@ -154,17 +157,23 @@ if class_filter == None:
         if editing:
             data = st.data_editor(
                 data,
-                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
                         max_chars=100,
-                        help='What is the name of the assignment?'
+                        help='What is the name of the assignment?',
+                        width='medium'
                     ),
                     'priority': st.column_config.SelectboxColumn(
                         'Priority',
                         options=['High', 'Medium', 'Low'],
                         help='How important is this assignment to complete?'
+                    ),
+                    'link': st.column_config.LinkColumn(
+                        'Link',
+                        help='Link to this assignment.',
+                        width='medium'
                     ),
                     'due_date': st.column_config.DateColumn(
                         'Due Date',
@@ -198,17 +207,23 @@ if class_filter == None:
         else:
             st.dataframe(
                 data,
-                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
-                        max_chars=50,
-                        help='What is the name of the assignment?'
+                        max_chars=100,
+                        help='What is the name of the assignment?',
+                        width='medium'
                     ),
                     'priority': st.column_config.SelectboxColumn(
                         'Priority',
                         options=['High', 'Medium', 'Low'],
                         help='How important is this assignment to complete?'
+                    ),
+                    'link': st.column_config.LinkColumn(
+                        'Link',
+                        help='Link to this assignment.',
+                        width='medium'
                     ),
                     'due_date': st.column_config.DateColumn(
                         'Due Date',
@@ -260,18 +275,24 @@ else:
 
         st.dataframe(
             filtered_data,
-            column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-            column_config={
-                'title':st.column_config.TextColumn(
-                    'Title',
-                    max_chars=50,
-                    help='What is the name of the assignment?'
-                ),
-                'priority': st.column_config.SelectboxColumn(
-                    'Priority',
-                    options=['High', 'Medium', 'Low'],
-                    help='How important is this assignment to complete?'
-                ),
+            column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=100,
+                        help='What is the name of the assignment?',
+                        width='medium'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'link': st.column_config.LinkColumn(
+                        'Link',
+                        help='Link to this assignment.',
+                        width='medium'
+                    ),
                 'due_date': st.column_config.DateColumn(
                     'Due Date',
                     help='When is the assignment due?'
