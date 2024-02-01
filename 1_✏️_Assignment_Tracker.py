@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
+import hashlib
+import io
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[]}
@@ -30,6 +32,11 @@ def remove_completed():
     else:
         st.toast('No completed assignments to remove.')
 
+def calculate_hash(data):
+    sha256 = hashlib.sha256()
+    sha256.update(data.encode('utf-8'))
+    return sha256.hexdigest()
+
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
@@ -42,7 +49,7 @@ st.set_page_config(
     page_icon='✏️',
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
-        'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'Get Help':'https://assignmenttracker.streamlit.app/tutorial',
         'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
     }
 )
@@ -72,19 +79,19 @@ with sidebar_tabs[0]:
             class_index = st.session_state.classrooms['Name'].index(classroom)
             for assignment in st.session_state.assignments:
                 if assignment['class'] == classroom:
-                    count += 1
+                    count += 1 #add check to exclude completed
             if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
             else:
                 st.error(f'{classroom}: {count} Assignments')
     else:
-        st.info('No classes yet.')
+        st.warning('No classes yet.')
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
     new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
     new_due_date = st.date_input('Enter Due Date:', min_value=(datetime.date.today()-relativedelta(weeks=1)), max_value=(datetime.date.today()+relativedelta(months=6)), help='When is this assignment due?')
-    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=360, value=30)
+    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
     new_classroom = st.selectbox('Enter Class:', st.session_state.classrooms['Name'], help='Which class is this assignment for?')
     if st.button('Create!', key=-1, help='Create a new assignment.'):
         if new_title != '':
@@ -102,20 +109,35 @@ with sidebar_tabs[1]:
 
 with sidebar_tabs[2]:
     data = pd.DataFrame(st.session_state.assignments)
+    hash_before_export = calculate_hash(data.to_csv(index=False))
+    csv_data_with_hash = data.to_csv(index=False) + f"\n# Hash: {hash_before_export}"
     st.download_button(
-    'Download Assignment Data',
-    help='Download as a file to keep as a backup or for use in other apps.',
-    data=data.to_csv(index=False).encode('utf-8'),
-    file_name='assignments.csv'
+        'Download Assignment Data',
+        help='Download as a file to keep as a backup or for use in other apps.',
+        data=csv_data_with_hash.encode('utf-8'),
+        file_name='assignments.csv'
     )
 
     file_import = st.file_uploader('Import Assignments from CSV', ['.csv'], False, help='Import a file containing your assignments.', key=st.session_state.upload_key)
     if file_import is not None:
-        import_data = pd.read_csv(file_import)
-        st.session_state.assignments = import_data.to_dict(orient='records')
-        for assignment in st.session_state.assignments:
-            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        st.session_state.upload_key += 1
+        imported_lines = file_import.getvalue().decode('utf-8').split('\n')
+        if len(imported_lines) > 1:
+            hash_before_import = imported_lines[-1].replace('# Hash: ', '')
+            modified_csv_data = '\n'.join(imported_lines[:-1])
+            hash_after_import = calculate_hash(modified_csv_data)
+            if hash_before_import is not None and hash_before_import == hash_after_import:
+                try:
+                    import_data = pd.read_csv(io.StringIO(modified_csv_data), comment='#')
+                    st.session_state.assignments = import_data.to_dict(orient='records')
+                    for assignment in st.session_state.assignments:
+                        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+                    st.session_state.upload_key += 1
+                except pd.errors.EmptyDataError:
+                    st.error('The CSV does not contain data.')
+            else:
+                st.error('Error: The imported CSV file has been tampered with or does not contain a valid hash.')
+        else:
+            None
 
 st.title('Assignments')
         
@@ -216,7 +238,7 @@ if class_filter == None:
             st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
     else:
-        st.write('Create some assignments to get started!')
+        st.warning('Create some assignments to get started!')
 
 else:
     class_index = (st.session_state.classrooms['Name'].index(class_filter))
@@ -278,4 +300,4 @@ else:
         st.button('Remove Completed Assignments', on_click=remove_completed)
 
     else:
-        st.write('You have no active assignments in this class.')
+        st.warning('You have no active assignments in this class.')
