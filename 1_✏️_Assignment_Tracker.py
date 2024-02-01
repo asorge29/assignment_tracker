@@ -49,7 +49,7 @@ st.set_page_config(
     page_icon='✏️',
     menu_items={
         'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
-        'Get Help':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'Get Help':'https://assignmenttracker.streamlit.app/tutorial',
         'About':'Simple web app to keep track of your assignments built as a learning project. Enjoy! :)'
     }
 )
@@ -85,7 +85,7 @@ with sidebar_tabs[0]:
             else:
                 st.error(f'{classroom}: {count} Assignments')
     else:
-        st.info('No classes yet.')
+        st.warning('No classes yet.')
 
 with sidebar_tabs[1]:
     new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?')
@@ -238,7 +238,7 @@ if class_filter == None:
             st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
     else:
-        st.write('Create some assignments to get started!')
+        st.warning('Create some assignments to get started!')
 
 else:
     class_index = (st.session_state.classrooms['Name'].index(class_filter))
@@ -300,4 +300,4 @@ else:
         st.button('Remove Completed Assignments', on_click=remove_completed)
 
     else:
-        st.write('You have no active assignments in this class.')
+        st.warning('You have no active assignments in this class.')
