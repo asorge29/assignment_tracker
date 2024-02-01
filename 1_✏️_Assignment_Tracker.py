@@ -78,8 +78,8 @@ with sidebar_tabs[0]:
             count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
             for assignment in st.session_state.assignments:
-                if assignment['class'] == classroom:
-                    count += 1 #add check to exclude completed
+                if assignment['class'] == classroom and assignment['done']:
+                    count += 1
             if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
             else:
