@@ -332,3 +332,4 @@ with columns[1]:
             assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
             with open(assignment_path, 'w') as data_file:
                 data_file.write('')
+            st.rerun()
