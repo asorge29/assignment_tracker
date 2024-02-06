@@ -104,7 +104,7 @@ with sidebar_tabs[0]:
             else:
                 st.error(f'{classroom}: {count} Assignments')
     else:
-        st.warning('No classes yet.')
+        st.info('No classes yet.')
 
 with sidebar_tabs[1]:
     with st.form('Assignment_form', clear_on_submit=True):
@@ -244,7 +244,7 @@ with columns[0]:
                 st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
 
         else:
-            st.warning('Create some assignments to get started!')
+            st.info('Create some assignments to get started!')
 
     else:
         class_index = (st.session_state.classrooms['Name'].index(class_filter))
@@ -312,13 +312,23 @@ with columns[0]:
             st.button('Remove Completed Assignments', on_click=remove_completed)
 
         else:
-            st.warning('You have no active assignments in this class.')
+            st.info('You have no active assignments in this class.')
 
 with columns[1]:
-    if st.button('Import from local file'):
-        import_file()
-    if st.button('Save to local file'):
-        data = pd.DataFrame(st.session_state.assignments)
+    if st.button('Load Asignments'):
+        try:
+            import_file()
+        except pd.errors.EmptyDataError:
+            st.error('You do not have any saved assignments.')
+    if st.button('Save Assignments'):
+        assignment_data = pd.DataFrame(st.session_state.assignments)
         assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
         with open(assignment_path, 'w') as data_file:
-            data_file.write(data.to_csv(index=False))
+            data_file.write(assignment_data.to_csv(index=False))
+    with st.expander('Clear Assignments'):
+        st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
+        if st.button('Clear Assignments'):
+            st.session_state.assignments = []
+            assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
+            with open(assignment_path, 'w') as data_file:
+                data_file.write('')

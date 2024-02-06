@@ -42,7 +42,7 @@ def remove_completed():
 #sidebar--------------------------------------------------
 st.sidebar.title('Create')
 st.sidebar.info('This is where you go to create new classes and assignments.')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Import/Export'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
     st.info(':arrow_up: This tab is used to create new classes, which will help categorize your assignments.')
     new_class = st.text_input('Enter Class', help='Enter the name of the class you wish to create, for example, "Math"', value='Math')
@@ -68,99 +68,148 @@ with sidebar_tabs[0]:
 
 with sidebar_tabs[1]:
     st.info(':arrow_up: This tab is used to create new assignments.')
-    new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?', value='Unit Circle Practice')
-    new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
-    new_due_date = st.date_input('Enter Due Date:', help='When is this assignment due?')
-    new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
-    new_classroom = st.selectbox('Enter Class:', ['Math', 'English', 'History'], help='Which class is this assignment for?')
-    st.button('Create!', key=-1, help='Create a new assignment.')
+    with st.form(key='create_assignment'):
+        new_title = st.text_input("Enter Title", max_chars=100, help='What is the assignment called?', value='Unit Circle Practice')
+        new_priority = st.selectbox('Choose Priority:', ['High', 'Medium', 'Low'], help='How important is this assignment?')
+        new_due_date = st.date_input('Enter Due Date:', help='When is this assignment due?')
+        new_time_estimate = st.number_input('Enter Time Estimate:', step=5, help='How long do you think this assignment will take? (in minutes)', min_value=5, max_value=600, value=30)
+        new_classroom = st.selectbox('Enter Class:', ['Math', 'English', 'History'], help='Which class is this assignment for?')
+        st.form_submit_button('Create!', help='Create a new assignment.')
     st.info(':arrow_up: Press this to add the class to your list of classes. Note: this button will not function in this tutorial.')
     st.error('Please enter a classroom.')
     st.info('This :arrow_up: will appear if you attempt to create an assignment without a classroom.')
     st.error('Please enter a title.')
     st.info('This :arrow_up: will appear if you attempt to create an assignment without a title.')
 
-with sidebar_tabs[2]:
-    st.info('This tab is used to import :arrow_up: assignments from a file.')
-    st.download_button(
-        'Download Assignment Data',
-        help='Download as a file to keep as a backup or for use in other apps.',
-        file_name='example_assignments.txt',
-        data='Hi! Thank you for using my app. I hope you enjoy it! :)'
-    )
-    st.info(':arrow_up: Press this to download a csv file containing your assignment data. Note: this button will not contain real data in this tutorial.')
-    file_import = st.file_uploader('Import Assignments from CSV', ['.csv'], False, help='Import a file containing your assignments.')
-    st.error('Error: The imported CSV file has been tampered with or does not contain a valid hash.')
-    st.info('This :arrow_up: will appear if you attempt to import a file that has been tampered with. Please do not edit your assignments file, or you will not be able to import it again.')
-    st.error('The CSV does not contain data.')
-    st.info('This :arrow_up: will appear if you attempt to import a file that does not contain any data.')
-
 st.title('Tutorial')
 st.info('This is a tutorial for the Assignment Tracker app. Look for blue boxes like this one for instructions. Also look for question mark symbols for tips and explanations.')
-class_filter = st.selectbox('Filter by Class', [None, 'Math', 'English', 'History'], None)
-st.info('This :arrow_up: is a dropdown menu that allows you to filter your assignments by class. You can choose to display all assignments, or only assignments for a specific class.')
 
-for assignment in st.session_state.dummy_assignments:
-    if isinstance(assignment['due_date'], str):
-        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-assignment_df = pd.DataFrame(st.session_state.dummy_assignments)
+columns = st.columns([0.7, 0.3])
+with columns[0]:
+    class_filter = st.selectbox('Filter by Class', [None, 'Math', 'English', 'History'], None)
+    st.info('This :arrow_up: is a dropdown menu that allows you to filter your assignments by class. You can choose to display all assignments, or only assignments for a specific class.')
 
-if class_filter == None:
-        editing = st.toggle('Edit Mode', value=False, on_change=update_assignments)
-        st.info('This :arrow_up: is a toggle that allows you to edit your assignments.')
+    for assignment in st.session_state.dummy_assignments:
+        if isinstance(assignment['due_date'], str):
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+    assignment_df = pd.DataFrame(st.session_state.dummy_assignments)
 
-        if editing:
-            assignment_df = st.data_editor(
-                assignment_df,
-                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                column_config={
-                    'title':st.column_config.TextColumn(
-                        'Title',
-                        max_chars=100,
-                        help='What is the name of the assignment?'
-                    ),
-                    'priority': st.column_config.SelectboxColumn(
-                        'Priority',
-                        options=['High', 'Medium', 'Low'],
-                        help='How important is this assignment to complete?'
-                    ),
-                    'due_date': st.column_config.DateColumn(
-                        'Due Date',
-                        help='When is the assignment due?'
-                    ),
-                    'time_est': st.column_config.NumberColumn(
-                        'Time Estimate',
-                        help='How long do you think it will take you to complete?',
-                        step=5,
-                        format='%d minutes'
-                    ),
-                    'class': st.column_config.SelectboxColumn(
-                        'Class',
-                        options=['Math', 'English', 'History'],
-                        help='What class is this assignment for?'
-                    ),
-                    'done': st.column_config.CheckboxColumn(
-                        'Done',
-                        help='Is the assignment done?'
-                    ),
-                    'overdue': st.column_config.CheckboxColumn(
-                        'Overdue',
-                        help='Is the assignment past its due date?'
-                    )
-                },
-                disabled=['overdue'],
-                hide_index=True
-            )
-            st.info('This :arrow_up: is a data editor that allows you to edit your assignments. Mark them as done if you would like to remove them. Edits will not be saved until you toggle out of edit mode.')
+    if class_filter == None:
+            editing = st.toggle('Edit Mode', value=False, on_change=update_assignments)
+            st.info('This :arrow_up: is a toggle that allows you to edit your assignments.')
 
-        else:
+            if editing:
+                assignment_df = st.data_editor(
+                    assignment_df,
+                    column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                    column_config={
+                        'title':st.column_config.TextColumn(
+                            'Title',
+                            max_chars=100,
+                            help='What is the name of the assignment?'
+                        ),
+                        'priority': st.column_config.SelectboxColumn(
+                            'Priority',
+                            options=['High', 'Medium', 'Low'],
+                            help='How important is this assignment to complete?'
+                        ),
+                        'due_date': st.column_config.DateColumn(
+                            'Due Date',
+                            help='When is the assignment due?'
+                        ),
+                        'time_est': st.column_config.NumberColumn(
+                            'Time Estimate',
+                            help='How long do you think it will take you to complete?',
+                            step=5,
+                            format='%d minutes'
+                        ),
+                        'class': st.column_config.SelectboxColumn(
+                            'Class',
+                            options=['Math', 'English', 'History'],
+                            help='What class is this assignment for?'
+                        ),
+                        'done': st.column_config.CheckboxColumn(
+                            'Done',
+                            help='Is the assignment done?'
+                        ),
+                        'overdue': st.column_config.CheckboxColumn(
+                            'Overdue',
+                            help='Is the assignment past its due date?'
+                        )
+                    },
+                    disabled=['overdue'],
+                    hide_index=True
+                )
+                st.info('This :arrow_up: is a data editor that allows you to edit your assignments. Mark them as done if you would like to remove them. Edits will not be saved until you toggle out of edit mode.')
+
+            else:
+                st.dataframe(
+                    assignment_df,
+                    column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                    column_config={
+                        'title':st.column_config.TextColumn(
+                            'Title',
+                            max_chars=100,
+                            help='What is the name of the assignment?'
+                        ),
+                        'priority': st.column_config.SelectboxColumn(
+                            'Priority',
+                            options=['High', 'Medium', 'Low'],
+                            help='How important is this assignment to complete?'
+                        ),
+                        'due_date': st.column_config.DateColumn(
+                            'Due Date',
+                            help='When is the assignment due?'
+                        ),
+                        'time_est': st.column_config.NumberColumn(
+                            'Time Estimate',
+                            help='How long do you think it will take you to complete?',
+                            step=5,
+                            format='%d minutes'
+                        ),
+                        'class': st.column_config.SelectboxColumn(
+                            'Class',
+                            options=['Math', 'English', 'History'],
+                            help='What class is this assignment for?'
+                        ),
+                        'done': st.column_config.CheckboxColumn(
+                            'Done',
+                            help='Is the assignment done?'
+                        ),
+                        'overdue': st.column_config.CheckboxColumn(
+                            'Overdue',
+                            help='Is the assignment past its due date?'
+                        )
+                    },
+                    hide_index=True
+                )
+                st.info('This :arrow_up: is a table of assignments. You can edit the assignments by turning on the edit mode toggle.')
+                st.button('Remove Completed Assignments', help='Remove all assignments that are marked as done.', on_click=remove_completed)
+                st.info('This :arrow_up: is a button that allows you to remove all assignments that are marked as done.')
+                st.warning('Create some assignments to get started!')
+                st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
+
+    else:
+        st.success('Late Work Allowed!')
+        st.info('This :arrow_up: is a message that displays when late work is allowed.')
+        st.error('Late Work Not Allowed!')
+        st.info('This :arrow_up: is a message that displays when late work is not allowed.')
+
+        has_assignments = False
+        for assignment in st.session_state.dummy_assignments:
+            if assignment['class'] == class_filter:
+                has_assignments = True
+                break
+        if has_assignments:
+            filtered_data = assignment_df[assignment_df['class'] == class_filter]
+
             st.dataframe(
-                assignment_df,
+                filtered_data,
                 column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
                 column_config={
                     'title':st.column_config.TextColumn(
                         'Title',
-                        max_chars=100,
+                        max_chars=50,
                         help='What is the name of the assignment?'
                     ),
                     'priority': st.column_config.SelectboxColumn(
@@ -190,73 +239,20 @@ if class_filter == None:
                     'overdue': st.column_config.CheckboxColumn(
                         'Overdue',
                         help='Is the assignment past its due date?'
-                    )
+                    ),
                 },
                 hide_index=True
             )
-            st.info('This :arrow_up: is a table of assignments. You can edit the assignments by turning on the edit mode toggle.')
-            st.button('Remove Completed Assignments', help='Remove all assignments that are marked as done.', on_click=remove_completed)
+            st.info('This :arrow_up: is a table of assignments containing only assignments for the selected class.')
+            st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
             st.info('This :arrow_up: is a button that allows you to remove all assignments that are marked as done.')
-            st.warning('Create some assignments to get started!')
+        
+            st.warning('You have no active assignments in this class.')
             st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
 
-else:
-    st.success('Late Work Allowed!')
-    st.info('This :arrow_up: is a message that displays when late work is allowed.')
-    st.error('Late Work Not Allowed!')
-    st.info('This :arrow_up: is a message that displays when late work is not allowed.')
-
-    has_assignments = False
-    for assignment in st.session_state.dummy_assignments:
-        if assignment['class'] == class_filter:
-            has_assignments = True
-            break
-    if has_assignments:
-        filtered_data = assignment_df[assignment_df['class'] == class_filter]
-
-        st.dataframe(
-            filtered_data,
-            column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-            column_config={
-                'title':st.column_config.TextColumn(
-                    'Title',
-                    max_chars=50,
-                    help='What is the name of the assignment?'
-                ),
-                'priority': st.column_config.SelectboxColumn(
-                    'Priority',
-                    options=['High', 'Medium', 'Low'],
-                    help='How important is this assignment to complete?'
-                ),
-                'due_date': st.column_config.DateColumn(
-                    'Due Date',
-                    help='When is the assignment due?'
-                ),
-                'time_est': st.column_config.NumberColumn(
-                    'Time Estimate',
-                    help='How long do you think it will take you to complete?',
-                    step=5,
-                    format='%d minutes'
-                ),
-                'class': st.column_config.SelectboxColumn(
-                    'Class',
-                    options=['Math', 'English', 'History'],
-                    help='What class is this assignment for?'
-                ),
-                'done': st.column_config.CheckboxColumn(
-                    'Done',
-                    help='Is the assignment done?'
-                ),
-                'overdue': st.column_config.CheckboxColumn(
-                    'Overdue',
-                    help='Is the assignment past its due date?'
-                ),
-            },
-            hide_index=True
-        )
-        st.info('This :arrow_up: is a table of assignments containing only assignments for the selected class.')
-        st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
-        st.info('This :arrow_up: is a button that allows you to remove all assignments that are marked as done.')
+with columns[1]:
+    st.button('Load Assignments')
+    st.info('This button :arrow_up: is used tom import your assignments from a csv file. on your computer')
+    st.button('Save Assignments')
+    st.info('This button :arrow_up: is used to save your assignments to a csv file on your computer')
     
-        st.warning('You have no active assignments in this class.')
-        st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
