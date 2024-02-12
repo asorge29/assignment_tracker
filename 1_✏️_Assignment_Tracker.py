@@ -71,11 +71,12 @@ st.set_page_config(
 )
 
 #init cookie manager------------------------------------------
-@st.cache_resource(experimental_allow_widgets=True)
+@st.cache_resource
 def get_manager():
     return stx.CookieManager()
 
 cookie_manager = get_manager()
+cookie_manager.get_all()
 
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
@@ -342,16 +343,14 @@ with columns[1]:
         st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
         if st.button('Clear Assignments'):
             st.session_state.assignments = []
-            assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
-            with open(assignment_path, 'w') as data_file:
-                data_file.write('')
-            st.rerun()
+            cookie_manager.delete('assignments')
+
     if st.button('Save to Cookies'):
         to_be_saved = st.session_state.assignments.copy()
         for assignment in to_be_saved:
             if isinstance(assignment['due_date'], datetime.date):
                 assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', to_be_saved)
+        cookie_manager.set('assignments', st.session_state.assignments)
 
     if st.button('Load from Cookies'):
         to_be_loaded = cookie_manager.get('assignments')
