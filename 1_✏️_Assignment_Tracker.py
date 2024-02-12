@@ -71,7 +71,7 @@ st.set_page_config(
 )
 
 #init cookie manager------------------------------------------
-@st.cache_resource
+@st.cache_resource(experimental_allow_widgets=True)
 def get_manager():
     return stx.CookieManager()
 
@@ -145,7 +145,6 @@ with sidebar_tabs[1]:
                 st.error('Please enter a title.')
 
 st.title('Assignments')
-st.write(st.session_state.assignments)
 
 columns = st.columns([0.7, 0.3])
 with columns[0]:
