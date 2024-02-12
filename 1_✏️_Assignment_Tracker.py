@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
 import os
-import csv
+import extra_streamlit_components as stx
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
@@ -33,7 +33,7 @@ def remove_completed():
         st.toast('No completed assignments to remove.')
 
 def get_documents_path():
-    return os.path.join(os.path.expanduser('~'), 'Documents')
+    return os.path.join(os.path.expanduser('~'), 'Downloads')
     
 def import_file():
     temp_df = pd.read_csv(os.path.join(get_documents_path(), 'assignments.csv'))
@@ -42,6 +42,10 @@ def import_file():
         assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
     st.rerun()
 #operations---------------------------------------------------
+for assignment in st.session_state.assignments:
+    if isinstance(assignment['due_date'], str):
+        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+    
 for assignment in st.session_state.assignments:
     if assignment['due_date'] < datetime.date.today():
         assignment['overdue'] = True
@@ -65,6 +69,14 @@ st.set_page_config(
         'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
     }
 )
+
+#init cookie manager------------------------------------------
+@st.cache_resource(experimental_allow_widgets=True)
+def get_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_manager()
+
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
@@ -132,6 +144,7 @@ with sidebar_tabs[1]:
                 st.error('Please enter a title.')
 
 st.title('Assignments')
+st.write(st.session_state.assignments)
 
 columns = st.columns([0.7, 0.3])
 with columns[0]:
@@ -333,3 +346,17 @@ with columns[1]:
             with open(assignment_path, 'w') as data_file:
                 data_file.write('')
             st.rerun()
+    if st.button('Save to Cookies'):
+        to_be_saved = st.session_state.assignments.copy()
+        for assignment in to_be_saved:
+            if isinstance(assignment['due_date'], datetime.date):
+                assignment['due_date'] = str(assignment['due_date'])
+        cookie_manager.set('assignments', to_be_saved)
+
+    if st.button('Load from Cookies'):
+        to_be_loaded = cookie_manager.get('assignments')
+        for assignment in to_be_loaded:
+            if isinstance(assignment['due_date'], str):
+                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        st.session_state.assignments = to_be_loaded
+        st.rerun()
