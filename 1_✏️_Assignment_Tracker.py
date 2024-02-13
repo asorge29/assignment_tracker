@@ -4,15 +4,25 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import os
 import extra_streamlit_components as stx
-#session state------------------------------------------------
-if 'classrooms' not in st.session_state:
-    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
+#page config--------------------------------------------------
+st.set_page_config(
+    page_title='Assignment Tracker',
+    layout='wide',
+    page_icon='✏️',
+    menu_items={
+        'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
+        'Get Help':'https://assignment-tracker.streamlit.app/Tutorial',
+        'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
+    }
+)
 
-if 'assignments' not in st.session_state:
-    st.session_state.assignments = []
+#init cookie manager------------------------------------------
+@st.cache_resource(experimental_allow_widgets=True)
+def get_manager():
+    return stx.CookieManager()
 
-if 'upload_key' not in st.session_state:
-    st.session_state.upload_key = 0
+cookie_manager = get_manager()
+cookie_manager.get_all()
 
 #functions----------------------------------------------------
 def update_assignments():
@@ -41,6 +51,34 @@ def import_file():
     for assignment in st.session_state.assignments:
         assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
     st.rerun()
+
+def load_from_cookies():
+        to_be_loaded = cookie_manager.get('assignments')
+        for assignment in to_be_loaded:
+            if isinstance(assignment['due_date'], str):
+                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        st.session_state.assignments = to_be_loaded
+        st.session_state.classrooms = cookie_manager.get('classes')
+        st.rerun()
+    
+def save_to_cookies():
+    to_be_saved = st.session_state.assignments.copy()
+    for assignment in to_be_saved:
+        if isinstance(assignment['due_date'], datetime.date):
+            assignment['due_date'] = str(assignment['due_date'])
+    cookie_manager.set('assignments', st.session_state.assignments, key='assignments')
+    cookie_manager.set('classes', st.session_state.classrooms, key='classrooms')
+
+#session state------------------------------------------------
+if 'classrooms' not in st.session_state:
+    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
+
+if 'assignments' not in st.session_state:
+        st.session_state.assignments = []
+
+if 'upload_key' not in st.session_state:
+    st.session_state.upload_key = 0
+
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
     if isinstance(assignment['due_date'], str):
@@ -57,26 +95,6 @@ for assignment in st.session_state.assignments:
         st.session_state.classrooms['Period'].append(assignment['period'])
 
 st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
-
-#page config--------------------------------------------------
-st.set_page_config(
-    page_title='Assignment Tracker',
-    layout='wide',
-    page_icon='✏️',
-    menu_items={
-        'Report a Bug':'https://github.com/BassMaster629/assignment_tracker/issues',
-        'Get Help':'https://assignment-tracker.streamlit.app/Tutorial',
-        'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
-    }
-)
-
-#init cookie manager------------------------------------------
-@st.cache_resource(experimental_allow_widgets=True)
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
-cookie_manager.get_all()
 
 #gui----------------------------------------------------------
 st.sidebar.title('Create')
@@ -328,33 +346,24 @@ with columns[0]:
             st.info('You have no active assignments in this class.')
 
 with columns[1]:
-    if st.button('Load Asignments'):
-        try:
-            import_file()
-        except pd.errors.EmptyDataError:
-            st.error('You do not have any saved assignments.')
-    if st.button('Save Assignments'):
-        assignment_data = pd.DataFrame(st.session_state.assignments)
-        assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
-        with open(assignment_path, 'w') as data_file:
-            data_file.write(assignment_data.to_csv(index=False))
-    with st.expander('Clear Assignments'):
-        st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
-        if st.button('Clear Assignments'):
-            st.session_state.assignments = []
-            cookie_manager.delete('assignments')
+#    if st.button('Load Asignments'):
+#        try:
+#            import_file()
+#        except pd.errors.EmptyDataError:
+#            st.error('You do not have any saved assignments.')
+#    if st.button('Save Assignments'):
+#        assignment_data = pd.DataFrame(st.session_state.assignments)
+#        assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
+#        with open(assignment_path, 'w') as data_file:
+#            data_file.write(assignment_data.to_csv(index=False))
+#    with st.expander('Clear Assignments'):
+#        st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
+#        if st.button('Clear Assignments'):
+#            st.session_state.assignments = []
+#            cookie_manager.delete('assignments')
 
     if st.button('Save to Cookies'):
-        to_be_saved = st.session_state.assignments.copy()
-        for assignment in to_be_saved:
-            if isinstance(assignment['due_date'], datetime.date):
-                assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', st.session_state.assignments)
+        save_to_cookies()
 
     if st.button('Load from Cookies'):
-        to_be_loaded = cookie_manager.get('assignments')
-        for assignment in to_be_loaded:
-            if isinstance(assignment['due_date'], str):
-                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        st.session_state.assignments = to_be_loaded
-        st.rerun()
+        load_from_cookies()
