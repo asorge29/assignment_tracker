@@ -1,3 +1,4 @@
 streamlit
 pandas
 datetime
+extra-streamlit-components
