@@ -66,8 +66,8 @@ def save_to_cookies():
     for assignment in to_be_saved:
         if isinstance(assignment['due_date'], datetime.date):
             assignment['due_date'] = str(assignment['due_date'])
-    cookie_manager.set('assignments', st.session_state.assignments, key='assignments')
-    cookie_manager.set('classes', st.session_state.classrooms, key='classrooms')
+    cookie_manager.set('assignments', to_be_saved, key='assignment')
+    cookie_manager.set('classes', st.session_state.classrooms, key='classes')
 
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
