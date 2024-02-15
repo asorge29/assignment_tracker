@@ -29,6 +29,7 @@ def update_assignments():
     global data
     if editing:
         st.session_state.assignments = data.to_dict(orient='records')
+        #save_to_cookies()
 
 def remove_completed():
     old_amount = len(st.session_state.assignments)
@@ -68,6 +69,16 @@ def save_to_cookies():
             assignment['due_date'] = str(assignment['due_date'])
     cookie_manager.set('assignments', to_be_saved, key='assignment')
     cookie_manager.set('classes', st.session_state.classrooms, key='classes')
+
+def check_saved_status():
+    to_be_loaded = cookie_manager.get('assignments')
+    for assignment in to_be_loaded:
+        if isinstance(assignment['due_date'], str):
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+    if to_be_loaded == st.session_state.assignments:
+        return True
+    else:
+        return False
 
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
@@ -157,6 +168,7 @@ with sidebar_tabs[1]:
                         new_assignment['link'] = None
                     new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
                     st.session_state.assignments.append(new_assignment)
+                    save_to_cookies()
                 else:
                     st.error('Please enter a classroom.')
             else:
@@ -164,7 +176,7 @@ with sidebar_tabs[1]:
 
 st.title('Assignments')
 
-columns = st.columns([0.7, 0.3])
+columns = st.columns([0.85, 0.15])
 with columns[0]:
     class_filter = st.selectbox('Filter by Class', [None]+st.session_state.classrooms['Name'], None)
 
@@ -361,9 +373,13 @@ with columns[1]:
 #        if st.button('Clear Assignments'):
 #            st.session_state.assignments = []
 #            cookie_manager.delete('assignments')
+    
+    if check_saved_status():
+        st.write('Save status: :white_check_mark:')
+    else:
+        st.write('Save status: :warning:')
 
-    if st.button('Save to Cookies'):
-        save_to_cookies()
-
-    if st.button('Load from Cookies'):
+    if st.button('Load Assignments'):
         load_from_cookies()
+    if st.button('Save Assignments'):
+        save_to_cookies()
