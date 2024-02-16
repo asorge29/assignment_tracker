@@ -2,3 +2,5 @@ streamlit
 pandas
 datetime
 extra-streamlit-components
+streamlit-option-menu
+streamlit-extras
