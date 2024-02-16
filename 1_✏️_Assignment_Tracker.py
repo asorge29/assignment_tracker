@@ -4,6 +4,8 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import os
 import extra_streamlit_components as stx
+from streamlit_option_menu import option_menu
+from streamlit_extras.let_it_rain import rain
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -63,23 +65,40 @@ def load_from_cookies():
         st.rerun()
     
 def save_to_cookies():
-    to_be_saved = st.session_state.assignments.copy()
-    for assignment in to_be_saved:
-        if isinstance(assignment['due_date'], datetime.date):
-            assignment['due_date'] = str(assignment['due_date'])
-    cookie_manager.set('assignments', to_be_saved, key='assignment')
-    cookie_manager.set('classes', st.session_state.classrooms, key='classes')
+    if len(st.session_state.assignments) > 0 or len(st.session_state.classrooms) > 0:
+        to_be_saved = st.session_state.assignments.copy()
+        for assignment in to_be_saved:
+            if isinstance(assignment['due_date'], datetime.date):
+                assignment['due_date'] = str(assignment['due_date'])
+        cookie_manager.set('assignments', to_be_saved, key='assignment')
+        cookie_manager.set('classes', st.session_state.classrooms, key='classes')
+    else:
+        st.toast('No assignments to save.')
 
 def check_saved_status():
-    to_be_loaded = cookie_manager.get('assignments')
-    for assignment in to_be_loaded:
-        if isinstance(assignment['due_date'], str):
-            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-    if to_be_loaded == st.session_state.assignments:
-        return True
-    else:
+    try:
+        current_save = cookie_manager.get('assignments')
+        for assignment in current_save:
+            if isinstance(assignment['due_date'], str):
+                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        if current_save == st.session_state.assignments:
+            return True
+        else:
+            return False
+    except TypeError:
         return False
 
+def remove_classroom(classroom):
+    index = st.session_state.classrooms['Name'].index(classroom)
+    st.session_state.classrooms['Name'].pop(index)
+    st.session_state.classrooms['Late Work'].pop(index)
+    st.session_state.classrooms['Period'].pop(index)
+    st.session_state.assignments = [assignment for assignment in st.session_state.assignments if assignment['class'] != classroom]
+    st.rerun()
+
+def easter_egg():
+    if 'The Ian Function' in st.session_state.classrooms['Name']:
+        rain(emoji='👺', font_size=54, falling_speed=10)
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
@@ -108,8 +127,8 @@ for assignment in st.session_state.assignments:
 st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
 
 #gui----------------------------------------------------------
-st.sidebar.title('Create')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
+st.sidebar.title('Configuration')
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete'])
 with sidebar_tabs[0]:
     with st.form('class_form', clear_on_submit=True):
         new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
@@ -174,16 +193,42 @@ with sidebar_tabs[1]:
             else:
                 st.error('Please enter a title.')
 
+with sidebar_tabs[2]:
+    to_be_deleted = st.selectbox('Delete Class', st.session_state.classrooms['Name'], help='Delete a class.')
+    if st.button('Delete'):
+        remove_classroom(to_be_deleted)
+
 st.title('Assignments')
 
 columns = st.columns([0.85, 0.15])
 with columns[0]:
-    class_filter = st.selectbox('Filter by Class', [None]+st.session_state.classrooms['Name'], None)
+    classroom_list = [None] * 2 * len(st.session_state.classrooms['Name'])
+    classroom_list[::2] = st.session_state.classrooms['Name']
+    amount_of_assignments = []
+    for classroom in st.session_state.classrooms['Name']:
+        count = 0
+        for assignment in st.session_state.assignments:
+            if assignment['class'] == classroom and not assignment['done']:
+                count += 1
+        amount_of_assignments.append(count)
+    classroom_list[1::2] = amount_of_assignments
+    for index in range(len(classroom_list)):
+        if index % 2 == 0:
+            classroom_list[index] = f'{classroom_list[index]}: {classroom_list[index+1]}'
+    for i in classroom_list:
+        if isinstance(i, int):
+            classroom_list.remove(i)
+    class_filter = option_menu('Select Class:', ['All'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check']*(len(classroom_list)+1))
+    class_filter = class_filter.split(':')[0]
 
-    if class_filter == None:
+with columns[1]:
+        if class_filter == 'All':
+            if len(st.session_state.assignments) > 0:
+                editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
+
+with columns[0]:
+    if class_filter == 'All':
         if len(st.session_state.assignments) > 0:
-            editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
-
             data = pd.DataFrame(st.session_state.assignments)
 
             if editing:
@@ -383,3 +428,5 @@ with columns[1]:
         load_from_cookies()
     if st.button('Save Assignments'):
         save_to_cookies()
+
+easter_egg()
