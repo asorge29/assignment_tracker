@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import datetime
+from streamlit_option_menu import option_menu
 
 if 'dummy_assignments' not in st.session_state:
     st.session_state.dummy_assignments = [
@@ -40,7 +41,7 @@ def remove_completed():
         st.toast('No completed assignments to remove.')
 
 #sidebar--------------------------------------------------
-st.sidebar.title('Create')
+st.sidebar.title('Configuration')
 st.sidebar.info('This is where you go to create new classes and assignments.')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment'])
 with sidebar_tabs[0]:
@@ -86,15 +87,32 @@ st.info('This is a tutorial for the Assignment Tracker app. Look for blue boxes 
 
 columns = st.columns([0.7, 0.3])
 with columns[0]:
-    class_filter = st.selectbox('Filter by Class', [None, 'Math', 'English', 'History'], None)
-    st.info('This :arrow_up: is a dropdown menu that allows you to filter your assignments by class. You can choose to display all assignments, or only assignments for a specific class.')
+    classroom_list = [None] * 6
+    classroom_list[::2] = ['Math', 'English', 'History']
+    amount_of_assignments = []
+    for classroom in ['Math', 'English', 'History']:
+        count = 0
+        for assignment in st.session_state.dummy_assignments:
+            if assignment['class'] == classroom and not assignment['done']:
+                count += 1
+        amount_of_assignments.append(count)
+    classroom_list[1::2] = amount_of_assignments
+    for index in range(len(classroom_list)):
+        if index % 2 == 0:
+            classroom_list[index] = f'{classroom_list[index]}: {classroom_list[index+1]}'
+    for i in classroom_list:
+        if isinstance(i, int):
+            classroom_list.remove(i)
+    class_filter = option_menu('Select Class', [f"All: {str(len([assignment for assignment in st.session_state.dummy_assignments if not assignment['done']]))}"] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check']*4)
+    st.info('This :arrow_up: is a menu that allows you to filter your assignments by class. You can choose to display all assignments, or only assignments for a specific class.')
+    class_filter = class_filter.split(':')[0]
 
     for assignment in st.session_state.dummy_assignments:
         if isinstance(assignment['due_date'], str):
             assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
     assignment_df = pd.DataFrame(st.session_state.dummy_assignments)
 
-    if class_filter == None:
+    if class_filter == 'All':
             editing = st.toggle('Edit Mode', value=False, on_change=update_assignments)
             st.info('This :arrow_up: is a toggle that allows you to edit your assignments.')
 
@@ -252,7 +270,6 @@ with columns[0]:
 
 with columns[1]:
     st.button('Load Assignments')
-    st.info('This button :arrow_up: is used tom import your assignments from a csv file. on your computer')
+    st.info("This button :arrow_up: is used to import your assignments from your browser's cookies")
     st.button('Save Assignments')
-    st.info('This button :arrow_up: is used to save your assignments to a csv file on your computer')
-    
+    st.info("This button :arrow_up: is used to save your assignments to your browser's cookies")
