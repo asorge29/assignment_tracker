@@ -85,7 +85,7 @@ with sidebar_tabs[1]:
 st.title('Tutorial')
 st.info('This is a tutorial for the Assignment Tracker app. Look for blue boxes like this one for instructions. Also look for question mark symbols for tips and explanations.')
 
-columns = st.columns([0.7, 0.3])
+columns = st.columns([0.85, 0.15])
 with columns[0]:
     classroom_list = [None] * 6
     classroom_list[::2] = ['Math', 'English', 'History']
@@ -106,112 +106,117 @@ with columns[0]:
     class_filter = option_menu('Select Class', [f"All: {str(len([assignment for assignment in st.session_state.dummy_assignments if not assignment['done']]))}"] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check']*4)
     st.info('This :arrow_up: is a menu that allows you to filter your assignments by class. You can choose to display all assignments, or only assignments for a specific class.')
     class_filter = class_filter.split(':')[0]
-
-    for assignment in st.session_state.dummy_assignments:
-        if isinstance(assignment['due_date'], str):
-            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-    assignment_df = pd.DataFrame(st.session_state.dummy_assignments)
-
+    
+with columns[1]:
     if class_filter == 'All':
+        if len(st.session_state.dummy_assignments) > 0:
             editing = st.toggle('Edit Mode', value=False, on_change=update_assignments)
             st.info('This :arrow_up: is a toggle that allows you to edit your assignments.')
 
-            if editing:
-                assignment_df = st.data_editor(
-                    assignment_df,
-                    column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                    column_config={
-                        'title':st.column_config.TextColumn(
-                            'Title',
-                            max_chars=100,
-                            help='What is the name of the assignment?'
-                        ),
-                        'priority': st.column_config.SelectboxColumn(
-                            'Priority',
-                            options=['High', 'Medium', 'Low'],
-                            help='How important is this assignment to complete?'
-                        ),
-                        'due_date': st.column_config.DateColumn(
-                            'Due Date',
-                            help='When is the assignment due?'
-                        ),
-                        'time_est': st.column_config.NumberColumn(
-                            'Time Estimate',
-                            help='How long do you think it will take you to complete?',
-                            step=5,
-                            format='%d minutes'
-                        ),
-                        'class': st.column_config.SelectboxColumn(
-                            'Class',
-                            options=['Math', 'English', 'History'],
-                            help='What class is this assignment for?'
-                        ),
-                        'done': st.column_config.CheckboxColumn(
-                            'Done',
-                            help='Is the assignment done?'
-                        ),
-                        'overdue': st.column_config.CheckboxColumn(
-                            'Overdue',
-                            help='Is the assignment past its due date?'
-                        )
-                    },
-                    disabled=['overdue'],
-                    hide_index=True
-                )
-                st.info('This :arrow_up: is a data editor that allows you to edit your assignments. Mark them as done if you would like to remove them. Edits will not be saved until you toggle out of edit mode.')
+with columns[0]:
+    for assignment in st.session_state.dummy_assignments:
+        if isinstance(assignment['due_date'], str):
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
 
-            else:
-                st.dataframe(
-                    assignment_df,
-                    column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                    column_config={
-                        'title':st.column_config.TextColumn(
-                            'Title',
-                            max_chars=100,
-                            help='What is the name of the assignment?'
-                        ),
-                        'priority': st.column_config.SelectboxColumn(
-                            'Priority',
-                            options=['High', 'Medium', 'Low'],
-                            help='How important is this assignment to complete?'
-                        ),
-                        'due_date': st.column_config.DateColumn(
-                            'Due Date',
-                            help='When is the assignment due?'
-                        ),
-                        'time_est': st.column_config.NumberColumn(
-                            'Time Estimate',
-                            help='How long do you think it will take you to complete?',
-                            step=5,
-                            format='%d minutes'
-                        ),
-                        'class': st.column_config.SelectboxColumn(
-                            'Class',
-                            options=['Math', 'English', 'History'],
-                            help='What class is this assignment for?'
-                        ),
-                        'done': st.column_config.CheckboxColumn(
-                            'Done',
-                            help='Is the assignment done?'
-                        ),
-                        'overdue': st.column_config.CheckboxColumn(
-                            'Overdue',
-                            help='Is the assignment past its due date?'
-                        )
-                    },
-                    hide_index=True
-                )
-                st.info('This :arrow_up: is a table of assignments. You can edit the assignments by turning on the edit mode toggle.')
-                st.button('Remove Completed Assignments', help='Remove all assignments that are marked as done.', on_click=remove_completed)
-                st.info('This :arrow_up: is a button that allows you to remove all assignments that are marked as done.')
-                st.warning('Create some assignments to get started!')
-                st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
+    assignment_df = pd.DataFrame(st.session_state.dummy_assignments)
+
+    if class_filter == 'All':
+        if editing:
+            assignment_df = st.data_editor(
+                assignment_df,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=100,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?'
+                    ),
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
+                        help='How long do you think it will take you to complete?',
+                        step=5,
+                        format='%d minutes'
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=['Math', 'English', 'History'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    )
+                },
+                disabled=['overdue'],
+                hide_index=True
+            )
+            st.info('This :arrow_up: is a data editor that allows you to edit your assignments. Mark them as done if you would like to remove them. Edits will not be saved until you toggle out of edit mode.')
+
+        else:
+            st.dataframe(
+                assignment_df,
+                column_order=(['title', 'priority', 'due_date', 'time_est', 'class', 'done', 'overdue']),
+                column_config={
+                    'title':st.column_config.TextColumn(
+                        'Title',
+                        max_chars=100,
+                        help='What is the name of the assignment?'
+                    ),
+                    'priority': st.column_config.SelectboxColumn(
+                        'Priority',
+                        options=['High', 'Medium', 'Low'],
+                        help='How important is this assignment to complete?'
+                    ),
+                    'due_date': st.column_config.DateColumn(
+                        'Due Date',
+                        help='When is the assignment due?'
+                    ),
+                    'time_est': st.column_config.NumberColumn(
+                        'Time Estimate',
+                        help='How long do you think it will take you to complete?',
+                        step=5,
+                        format='%d minutes'
+                    ),
+                    'class': st.column_config.SelectboxColumn(
+                        'Class',
+                        options=['Math', 'English', 'History'],
+                        help='What class is this assignment for?'
+                    ),
+                    'done': st.column_config.CheckboxColumn(
+                        'Done',
+                        help='Is the assignment done?'
+                    ),
+                    'overdue': st.column_config.CheckboxColumn(
+                        'Overdue',
+                        help='Is the assignment past its due date?'
+                    )
+                },
+                hide_index=True
+            )
+            st.info('This :arrow_up: is a table of assignments. You can edit the assignments by turning on the edit mode toggle.')
+            st.button('Remove Completed Assignments', help='Remove all assignments that are marked as done.', on_click=remove_completed)
+            st.info('This :arrow_up: is a button that allows you to remove all assignments that are marked as done.')
+            st.warning('Create some assignments to get started!')
+            st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
 
     else:
         st.success('Late Work Allowed!')
-        st.info('This :arrow_up: is a message that displays when late work is allowed.')
+        st.info('This :arrow_up: is a message that displays when late work is allowed for the selected class.')
         st.error('Late Work Not Allowed!')
-        st.info('This :arrow_up: is a message that displays when late work is not allowed.')
+        st.info('This :arrow_up: is a message that displays when late work is not allowed for the selected class.')
 
         has_assignments = False
         for assignment in st.session_state.dummy_assignments:
@@ -269,7 +274,9 @@ with columns[0]:
             st.info('This :arrow_up: is a message that displays when there are no assignments to display.')
 
 with columns[1]:
+    st.write('Save status: :warning:')
+    st.info('This :arrow_up: is a message that displays when the assignments have not been saved. :white_check_mark: indicates that the assignments have been saved. :warning: indicates that the assignments have not been saved.')
     st.button('Load Assignments')
-    st.info("This button :arrow_up: is used to import your assignments from your browser's cookies")
+    st.info("This button :arrow_up: is used to import your assignments from your browser's cookies.")
     st.button('Save Assignments')
-    st.info("This button :arrow_up: is used to save your assignments to your browser's cookies")
+    st.info("This button :arrow_up: is used to save your assignments to your browser's cookies.")
