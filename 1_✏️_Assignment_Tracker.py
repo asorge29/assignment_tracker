@@ -222,9 +222,9 @@ with columns[0]:
     class_filter = class_filter.split(':')[0]
 
 with columns[1]:
-        if class_filter == 'All':
-            if len(st.session_state.assignments) > 0:
-                editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
+    if class_filter == 'All':
+        if len(st.session_state.assignments) > 0:
+            editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
 
 with columns[0]:
     if class_filter == 'All':
