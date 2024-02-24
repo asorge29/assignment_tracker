@@ -56,13 +56,13 @@ def import_file():
     st.rerun()
 
 def load_from_cookies():
-        to_be_loaded = cookie_manager.get('assignments')
-        for assignment in to_be_loaded:
-            if isinstance(assignment['due_date'], str):
-                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        st.session_state.assignments = to_be_loaded
-        st.session_state.classrooms = cookie_manager.get('classes')
-        st.rerun()
+    to_be_loaded = cookie_manager.get('assignments')
+    for assignment in to_be_loaded:
+        if isinstance(assignment['due_date'], str):
+            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+    st.session_state.assignments = to_be_loaded
+    st.session_state.classrooms = cookie_manager.get('classes')
+    st.rerun()
     
 def save_to_cookies():
     if len(st.session_state.assignments) > 0 or len(st.session_state.classrooms) > 0:
