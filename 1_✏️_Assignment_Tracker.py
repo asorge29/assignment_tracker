@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
-import os
 import extra_streamlit_components as stx
 from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
@@ -45,17 +44,8 @@ def remove_completed():
     else:
         st.toast('No completed assignments to remove.')
 
-def get_documents_path():
-    return os.path.join(os.path.expanduser('~'), 'Downloads')
-    
-def import_file():
-    temp_df = pd.read_csv(os.path.join(get_documents_path(), 'assignments.csv'))
-    st.session_state.assignments = temp_df.to_dict(orient='records')
-    for assignment in st.session_state.assignments:
-        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-    st.rerun()
-
 def load_from_cookies():
+    try:
         to_be_loaded = cookie_manager.get('assignments')
         for assignment in to_be_loaded:
             if isinstance(assignment['due_date'], str):
@@ -63,15 +53,17 @@ def load_from_cookies():
         st.session_state.assignments = to_be_loaded
         st.session_state.classrooms = cookie_manager.get('classes')
         st.rerun()
-    
+    except TypeError:
+        st.toast('No assignments to load.')
+        
 def save_to_cookies():
     if len(st.session_state.assignments) > 0 or len(st.session_state.classrooms) > 0:
         to_be_saved = st.session_state.assignments.copy()
         for assignment in to_be_saved:
             if isinstance(assignment['due_date'], datetime.date):
                 assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', to_be_saved, key='assignment')
-        cookie_manager.set('classes', st.session_state.classrooms, key='classes')
+        cookie_manager.set('assignments', to_be_saved, key='assignment', expires_at=datetime.datetime.now() + relativedelta(days=365))
+        cookie_manager.set('classes', st.session_state.classrooms, key='classes', expires_at=datetime.datetime.now() + relativedelta(days=365))
     else:
         st.toast('No assignments to save.')
 
@@ -104,10 +96,7 @@ if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
 
 if 'assignments' not in st.session_state:
-        st.session_state.assignments = []
-
-if 'upload_key' not in st.session_state:
-    st.session_state.upload_key = 0
+    st.session_state.assignments = []
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -222,9 +211,9 @@ with columns[0]:
     class_filter = class_filter.split(':')[0]
 
 with columns[1]:
-        if class_filter == 'All':
-            if len(st.session_state.assignments) > 0:
-                editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
+    if class_filter == 'All':
+        if len(st.session_state.assignments) > 0:
+            editing = st.toggle('Edit Mode', on_change=update_assignments, value=False)
 
 with columns[0]:
     if class_filter == 'All':
@@ -403,22 +392,6 @@ with columns[0]:
             st.info('You have no active assignments in this class.')
 
 with columns[1]:
-#    if st.button('Load Asignments'):
-#        try:
-#            import_file()
-#        except pd.errors.EmptyDataError:
-#            st.error('You do not have any saved assignments.')
-#    if st.button('Save Assignments'):
-#        assignment_data = pd.DataFrame(st.session_state.assignments)
-#        assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
-#        with open(assignment_path, 'w') as data_file:
-#            data_file.write(assignment_data.to_csv(index=False))
-#    with st.expander('Clear Assignments'):
-#        st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
-#        if st.button('Clear Assignments'):
-#            st.session_state.assignments = []
-#            cookie_manager.delete('assignments')
-    
     if check_saved_status():
         st.write('Save status: :white_check_mark:')
     else:
