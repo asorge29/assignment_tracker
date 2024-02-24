@@ -56,22 +56,25 @@ def import_file():
     st.rerun()
 
 def load_from_cookies():
-    to_be_loaded = cookie_manager.get('assignments')
-    for assignment in to_be_loaded:
-        if isinstance(assignment['due_date'], str):
-            assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-    st.session_state.assignments = to_be_loaded
-    st.session_state.classrooms = cookie_manager.get('classes')
-    st.rerun()
-    
+    try:
+        to_be_loaded = cookie_manager.get('assignments')
+        for assignment in to_be_loaded:
+            if isinstance(assignment['due_date'], str):
+                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+        st.session_state.assignments = to_be_loaded
+        st.session_state.classrooms = cookie_manager.get('classes')
+        st.rerun()
+    except TypeError:
+        st.toast('No assignments to load.')
+        
 def save_to_cookies():
     if len(st.session_state.assignments) > 0 or len(st.session_state.classrooms) > 0:
         to_be_saved = st.session_state.assignments.copy()
         for assignment in to_be_saved:
             if isinstance(assignment['due_date'], datetime.date):
                 assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', to_be_saved, key='assignment')
-        cookie_manager.set('classes', st.session_state.classrooms, key='classes')
+        cookie_manager.set('assignments', to_be_saved, key='assignment', expires_at=datetime.datetime.now() + relativedelta(days=365))
+        cookie_manager.set('classes', st.session_state.classrooms, key='classes', expires_at=datetime.datetime.now() + relativedelta(days=365))
     else:
         st.toast('No assignments to save.')
 
@@ -104,7 +107,7 @@ if 'classrooms' not in st.session_state:
     st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
 
 if 'assignments' not in st.session_state:
-        st.session_state.assignments = []
+    st.session_state.assignments = []
 
 if 'upload_key' not in st.session_state:
     st.session_state.upload_key = 0
