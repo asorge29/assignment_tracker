@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
-import os
 import extra_streamlit_components as stx
 from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
@@ -44,16 +43,6 @@ def remove_completed():
             st.toast('Congradulations on completing all your assignments!')
     else:
         st.toast('No completed assignments to remove.')
-
-def get_documents_path():
-    return os.path.join(os.path.expanduser('~'), 'Downloads')
-    
-def import_file():
-    temp_df = pd.read_csv(os.path.join(get_documents_path(), 'assignments.csv'))
-    st.session_state.assignments = temp_df.to_dict(orient='records')
-    for assignment in st.session_state.assignments:
-        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-    st.rerun()
 
 def load_from_cookies():
     try:
@@ -108,9 +97,6 @@ if 'classrooms' not in st.session_state:
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
-
-if 'upload_key' not in st.session_state:
-    st.session_state.upload_key = 0
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -406,22 +392,6 @@ with columns[0]:
             st.info('You have no active assignments in this class.')
 
 with columns[1]:
-#    if st.button('Load Asignments'):
-#        try:
-#            import_file()
-#        except pd.errors.EmptyDataError:
-#            st.error('You do not have any saved assignments.')
-#    if st.button('Save Assignments'):
-#        assignment_data = pd.DataFrame(st.session_state.assignments)
-#        assignment_path = os.path.join(get_documents_path(), 'assignments.csv')
-#        with open(assignment_path, 'w') as data_file:
-#            data_file.write(assignment_data.to_csv(index=False))
-#    with st.expander('Clear Assignments'):
-#        st.warning('This will delete all assignments including the ones in your local file!', icon='⚠️')
-#        if st.button('Clear Assignments'):
-#            st.session_state.assignments = []
-#            cookie_manager.delete('assignments')
-    
     if check_saved_status():
         st.write('Save status: :white_check_mark:')
     else:
