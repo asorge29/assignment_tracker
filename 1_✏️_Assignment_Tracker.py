@@ -61,7 +61,8 @@ def save_to_cookies(key1, key2):
         for assignment in to_be_saved:
             if isinstance(assignment['due_date'], datetime.date):
                 assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', to_be_saved, key=key1, expires_at=datetime.datetime.now() + relativedelta(days=365))
+        if len(to_be_saved) > 0:
+            cookie_manager.set('assignments', to_be_saved, key=key1, expires_at=datetime.datetime.now() + relativedelta(days=365))
         cookie_manager.set('classes', st.session_state.classrooms, key=key2, expires_at=datetime.datetime.now() + relativedelta(days=365))
     else:
         st.toast('No assignments to save.')
@@ -85,6 +86,7 @@ def remove_classroom(classroom):
     st.session_state.classrooms['Late Work'].pop(index)
     st.session_state.classrooms['Period'].pop(index)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if assignment['class'] != classroom]
+    cookie_manager.set('classes', st.session_state.classrooms, key=77, expires_at=datetime.datetime.now() + relativedelta(days=365))
     st.rerun()
 
 def easter_egg():
@@ -137,6 +139,7 @@ with sidebar_tabs[0]:
                         st.session_state.classrooms['Late Work'].append(late_work)
                         st.session_state.classrooms['Period'].append(new_period)
                         st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+                        save_to_cookies(9,10)
                     else:
                         st.error('Please enter a name.')
                 else:
@@ -189,6 +192,12 @@ with sidebar_tabs[2]:
     to_be_deleted = st.selectbox('Delete Class', st.session_state.classrooms['Name'], help='Delete a class.')
     if st.button('Delete'):
         remove_classroom(to_be_deleted)
+    if st.button('Clear All'):
+        st.session_state.classrooms = {'Name':[], 'Late Work':[], 'Period':[]}
+        st.session_state.assignments = []
+        cookie_manager.delete('assignments',key=900)
+        cookie_manager.delete('classes', key=901)
+    st.warning('This will delete all assignments and classes. Thic cannot be undone.', icon='⚠️')
 
 with sidebar_tabs[3]:
     if st.button('Load Assignments'):
@@ -196,15 +205,13 @@ with sidebar_tabs[3]:
     if st.button('Save Assignments'):
         save_to_cookies(3,4)
 
-columns = st.columns([0.5, 0.3])
-with columns[0]:
-    st.title('Assignments')
-with columns[1]:
-    if check_saved_status():
-        st.write('Save status: :white_check_mark:')
-    else:
-        st.write('Save status: :warning:')
 
+st.title('Assignments')
+
+if check_saved_status():
+    st.write('Save status: :white_check_mark:')
+else:
+    st.write('Save status: :warning:')
 
 classroom_list = [None] * 2 * len(st.session_state.classrooms['Name'])
 classroom_list[::2] = st.session_state.classrooms['Name']
@@ -222,7 +229,7 @@ for index in range(len(classroom_list)):
 for i in classroom_list:
     if isinstance(i, int):
         classroom_list.remove(i)
-class_filter = option_menu('Select Class:', ['All', 'Edit'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check']*(len(classroom_list)+1))
+class_filter = option_menu('Select Class:', ['All', 'Edit'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check', 'pencil']+['list-check']*(len(classroom_list)))
 class_filter = class_filter.split(':')[0]
 
 if class_filter == 'All' or 'Edit':
