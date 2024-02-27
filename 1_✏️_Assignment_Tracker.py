@@ -137,6 +137,7 @@ with sidebar_tabs[0]:
                         st.session_state.classrooms['Late Work'].append(late_work)
                         st.session_state.classrooms['Period'].append(new_period)
                         st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+                        save_to_cookies(9,10)
                     else:
                         st.error('Please enter a name.')
                 else:
@@ -201,7 +202,7 @@ with columns[0]:
     st.title('Assignments')
 with columns[1]:
     if check_saved_status():
-        st.write('Save status: :white_check_mark:')
+        st.header('Save status: :white_check_mark:')
     else:
         st.write('Save status: :warning:')
 
