@@ -192,6 +192,12 @@ with sidebar_tabs[2]:
     to_be_deleted = st.selectbox('Delete Class', st.session_state.classrooms['Name'], help='Delete a class.')
     if st.button('Delete'):
         remove_classroom(to_be_deleted)
+    if st.button('Clear All'):
+        st.session_state.classrooms = {'Name':[], 'Late Work':[], 'Period':[]}
+        st.session_state.assignments = []
+        cookie_manager.delete('assignments',key=900)
+        cookie_manager.delete('classes', key=901)
+    st.warning('This will delete all assignments and classes. Thic cannot be undone.', icon='⚠️')
 
 with sidebar_tabs[3]:
     if st.button('Load Assignments'):
