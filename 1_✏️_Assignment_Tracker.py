@@ -61,7 +61,8 @@ def save_to_cookies(key1, key2):
         for assignment in to_be_saved:
             if isinstance(assignment['due_date'], datetime.date):
                 assignment['due_date'] = str(assignment['due_date'])
-        cookie_manager.set('assignments', to_be_saved, key=key1, expires_at=datetime.datetime.now() + relativedelta(days=365))
+        if len(to_be_saved) > 0:
+            cookie_manager.set('assignments', to_be_saved, key=key1, expires_at=datetime.datetime.now() + relativedelta(days=365))
         cookie_manager.set('classes', st.session_state.classrooms, key=key2, expires_at=datetime.datetime.now() + relativedelta(days=365))
     else:
         st.toast('No assignments to save.')
@@ -222,7 +223,7 @@ for index in range(len(classroom_list)):
 for i in classroom_list:
     if isinstance(i, int):
         classroom_list.remove(i)
-class_filter = option_menu('Select Class:', ['All', 'Edit'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check']*(len(classroom_list)+1))
+class_filter = option_menu('Select Class:', ['All', 'Edit'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check', 'pencil']+['list-check']*(len(classroom_list)))
 class_filter = class_filter.split(':')[0]
 
 if class_filter == 'All' or 'Edit':
