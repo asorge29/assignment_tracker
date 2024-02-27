@@ -85,6 +85,7 @@ def remove_classroom(classroom):
     st.session_state.classrooms['Late Work'].pop(index)
     st.session_state.classrooms['Period'].pop(index)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if assignment['class'] != classroom]
+    cookie_manager.set('classes', st.session_state.classrooms, key=77, expires_at=datetime.datetime.now() + relativedelta(days=365))
     st.rerun()
 
 def easter_egg():
@@ -197,15 +198,13 @@ with sidebar_tabs[3]:
     if st.button('Save Assignments'):
         save_to_cookies(3,4)
 
-columns = st.columns([0.5, 0.3])
-with columns[0]:
-    st.title('Assignments')
-with columns[1]:
-    if check_saved_status():
-        st.header('Save status: :white_check_mark:')
-    else:
-        st.write('Save status: :warning:')
 
+st.title('Assignments')
+
+if check_saved_status():
+    st.write('Save status: :white_check_mark:')
+else:
+    st.write('Save status: :warning:')
 
 classroom_list = [None] * 2 * len(st.session_state.classrooms['Name'])
 classroom_list[::2] = st.session_state.classrooms['Name']
