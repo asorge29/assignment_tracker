@@ -87,6 +87,7 @@ def remove_classroom(classroom):
     st.session_state.classrooms['Period'].pop(index)
     st.session_state.assignments = [assignment for assignment in st.session_state.assignments if assignment['class'] != classroom]
     cookie_manager.set('classes', st.session_state.classrooms, key=77, expires_at=datetime.datetime.now() + relativedelta(days=365))
+    st.session_state.bypass_autoload = True
     st.rerun()
 
 def easter_egg():
@@ -98,6 +99,9 @@ if 'classrooms' not in st.session_state:
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = []
+
+if 'bypass_autoload' not in st.session_state:
+    st.session_state.bypass_autoload = False
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments:
@@ -116,9 +120,13 @@ for assignment in st.session_state.assignments:
 
 st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
 
-if len(st.session_state.assignments) == 0 and len(st.session_state.classrooms['Name']) == 0 and cookie_manager.get('assignments') is not None:
-    if len(cookie_manager.get('assignments')) > 0 or len(cookie_manager.get('classes')) > 0:
-        load_from_cookies()
+if not st.session_state.bypass_autoload:
+    if len(st.session_state.assignments) == 0 and len(st.session_state.classrooms['Name']) == 0 and cookie_manager.get('assignments') is not None:
+        if len(cookie_manager.get('assignments')) > 0 or len(cookie_manager.get('classes')) > 0:
+            load_from_cookies()
+else:
+    save_to_cookies(13,14)
+    st.session_state.bypass_autoload = False
 
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
@@ -197,6 +205,7 @@ with sidebar_tabs[2]:
         st.session_state.assignments = []
         cookie_manager.delete('assignments',key=900)
         cookie_manager.delete('classes', key=901)
+        st.session_state.bypass_autoload = True
     st.warning('This will delete all assignments and classes. Thic cannot be undone.', icon='⚠️')
 
 with sidebar_tabs[3]:
