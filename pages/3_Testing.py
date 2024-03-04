@@ -72,10 +72,12 @@ COLUMN_CONFIG = {
 COLUMN_ORDER = ['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']
 
 #operations---------------------------------------------------
-#TODO update this
 for assignment in st.session_state.assignments.iterrows():
     if assignment[1]['due_date'] < datetime.date.today():
         assignment[1]['overdue'] = True
+
+for i in st.session_state.classrooms['Name']:
+    st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(i)] = len(st.session_state.assignments[st.session_state.assignments['class'] == i])
 
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
@@ -139,8 +141,8 @@ with sidebar_tabs[1]:
                         new_assignment['link'] = None
                     new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
                     st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(new_classroom)] += 1
-#TODO replace append with concat
-                    st.session_state.assignments = st.session_state.assignments.append(new_assignment, ignore_index=True)
+                    new_assignment = pd.DataFrame(new_assignment, index=[0])
+                    st.session_state.assignments = pd.concat([st.session_state.assignments, new_assignment], ignore_index=True)
                 else:
                     st.error('Please enter a classroom.')
             else:
