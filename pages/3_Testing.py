@@ -7,6 +7,7 @@ from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
 from streamlit_card import card
 import streamlit_antd_components as sac
+from streamlit_cookies_manager import CookieManager
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -18,6 +19,8 @@ st.set_page_config(
         'About':'https://github.com/BassMaster629/assignment_tracker/blob/main/README.md'
     }
 )
+
+cookies = CookieManager()
 
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
@@ -70,6 +73,8 @@ COLUMN_CONFIG = {
     )
 }
 COLUMN_ORDER = ['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']
+
+st.write(cookies)
 
 #operations---------------------------------------------------
 for assignment in st.session_state.assignments.iterrows():
@@ -147,6 +152,13 @@ with sidebar_tabs[1]:
                     st.error('Please enter a classroom.')
             else:
                 st.error('Please enter a title.')
+
+with sidebar_tabs[3]:
+    if st.button('Save'):
+        cookies['assignments'] = st.session_state.assignments.to_json()
+        cookies.save()
+    if st.button('delete'):
+        cookies.clear()
 
 st.title('Assignments')
 
