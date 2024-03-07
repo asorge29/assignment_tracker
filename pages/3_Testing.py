@@ -7,6 +7,7 @@ from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
 from streamlit_card import card
 import streamlit_antd_components as sac
+from streamlit_cookies_manager import CookieManager
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -25,6 +26,9 @@ if 'classrooms' not in st.session_state:
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = pd.DataFrame(columns=['title', 'priority', 'due_date', 'time_est', 'class', 'link', 'done', 'overdue', 'late_allowed'])
+
+if 'a' not in st.session_state:
+    st.session_state.a = 0
 
 #constants----------------------------------------------------
 COLUMN_CONFIG = {
@@ -74,6 +78,14 @@ COLUMN_ORDER = ['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'd
 #operations---------------------------------------------------
 for i in st.session_state.classrooms['Name']:
     st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(i)] = len(st.session_state.assignments[st.session_state.assignments['class'] == i])
+
+for assignment in st.session_state.assignments.iterrows():
+    if isinstance(assignment[1]['due_date'], str):
+        assignment[1]['due_date'] = datetime.datetime.strptime(assignment[1]['due_date'], '%Y-%m-%d').date()
+    
+for index, assignment in st.session_state.assignments.iterrows():
+    if assignment['due_date'] < datetime.date.today():
+        assignment.loc[index, 'overdue'] = True
 
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
@@ -134,7 +146,7 @@ with sidebar_tabs[1]:
                     if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
                         new_assignment['late_allowed'] = True
                     if len(new_link) < 2:
-                        new_assignment['link'] = None
+                        new_assignment['link'] = 'about:blank'
                     new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
                     st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(new_classroom)] += 1
                     new_assignment = pd.DataFrame(new_assignment, index=[0])
@@ -157,10 +169,20 @@ for i in menu_list:
         menu_list.remove(i)
     
 class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg').split(':')[0]
-print(st.session_state.assignments)
-print(st.session_state.assignments.applymap(lambda x: type(x)))
-for i in st.session_state.assignments.to_dict(orient='records'):
-    print(type(i['due_date']))
+
+
+cookies = CookieManager()
+if st.session_state.a > 2:
+    cookies['ass'] = st.session_state.assignments.to_json()
+    cookies.save()
+
+if st.button('Refresh'):
+    from_cookies = pd.read_json(cookies['ass'])
+    for index, row in from_cookies.iterrows():
+        if type(row['due_date']) != datetime.date:
+            from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
+    from_cookies.fillna(value='about:blank', inplace=True)
+    st.session_state.assignments = from_cookies
 
 if class_filter == 'All':
     st.dataframe(st.session_state.assignments, hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
@@ -168,3 +190,6 @@ elif class_filter == 'Edit':
     st.session_state.assignments = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
 else:
     st.dataframe(st.session_state.assignments[st.session_state.assignments['class'] == class_filter], hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+
+st.session_state.a += 1
+st.write(st.session_state.a)
