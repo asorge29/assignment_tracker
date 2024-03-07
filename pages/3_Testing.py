@@ -27,9 +27,12 @@ if 'classrooms' not in st.session_state:
 if 'assignments' not in st.session_state:
     st.session_state.assignments = pd.DataFrame(columns=['title', 'priority', 'due_date', 'time_est', 'class', 'link', 'done', 'overdue', 'late_allowed'])
 
-if 'a' not in st.session_state:
-    st.session_state.a = 0
+if 'bypass_autoload' not in st.session_state:
+    st.session_state.bypass_autoload = False
 
+if 'reruns' not in st.session_state:
+    st.session_state.reruns = 0
+st.session_state.reruns += 1
 #constants----------------------------------------------------
 COLUMN_CONFIG = {
     'title':st.column_config.TextColumn(
@@ -87,6 +90,18 @@ for index, assignment in st.session_state.assignments.iterrows():
     if assignment['due_date'] < datetime.date.today():
         assignment.loc[index, 'overdue'] = True
 
+cookies = CookieManager()
+if not cookies.ready():
+    st.stop()
+
+if st.session_state.reruns <=3 and not st.session_state.bypass_autoload and cookies.ready() and len(st.session_state.classrooms['Name']) == 0 and len(st.session_state.assignments) == 0:
+    from_cookies = pd.read_json(cookies['ass'])
+    for index, row in from_cookies.iterrows():
+        if type(row['due_date']) != datetime.date:
+            from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
+    from_cookies.fillna(value='about:blank', inplace=True)
+    st.session_state.assignments = from_cookies
+    st.session_state.bypass_autoload = True
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete', 'Save/Load'])
@@ -171,8 +186,7 @@ for i in menu_list:
 class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg').split(':')[0]
 
 
-cookies = CookieManager()
-if st.session_state.a > 2:
+if st.session_state.reruns> 2:
     cookies['ass'] = st.session_state.assignments.to_json()
     cookies.save()
 
@@ -190,6 +204,3 @@ elif class_filter == 'Edit':
     st.session_state.assignments = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
 else:
     st.dataframe(st.session_state.assignments[st.session_state.assignments['class'] == class_filter], hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
-
-st.session_state.a += 1
-st.write(st.session_state.a)
