@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
-import extra_streamlit_components as stx
 from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
 from streamlit_card import card
@@ -20,9 +19,24 @@ st.set_page_config(
     }
 )
 
+#functions----------------------------------------------------
+def remove_completed():
+    for index, assignment in st.session_state.assignments.iterrows():
+        if assignment['done']:
+            st.session_state.assignments.drop(index, inplace=True)
+
+def update_assignments():
+    global edited_df, class_filter
+    try:
+        if class_filter == 'Edit':
+            if edited_df != None:
+                st.session_state.assignments = edited_df
+    except:
+        pass
+
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
-    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[], 'Count':[]}
+    st.session_state.classrooms = {'Name':[], 'Late Work':[], 'Period':[], 'Count':[]}
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = pd.DataFrame(columns=['title', 'priority', 'due_date', 'time_est', 'class', 'link', 'done', 'overdue', 'late_allowed'])
@@ -95,13 +109,20 @@ if not cookies.ready():
     st.stop()
 
 if st.session_state.reruns <=3 and not st.session_state.bypass_autoload and cookies.ready() and len(st.session_state.classrooms['Name']) == 0 and len(st.session_state.assignments) == 0:
-    from_cookies = pd.read_json(cookies['ass'])
-    for index, row in from_cookies.iterrows():
-        if type(row['due_date']) != datetime.date:
-            from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
-    from_cookies.fillna(value='about:blank', inplace=True)
-    st.session_state.assignments = from_cookies
-    st.session_state.bypass_autoload = True
+    try:
+        from_cookies = pd.read_json(cookies['assignments'])
+        for index, row in from_cookies.iterrows():
+            if type(row['due_date']) != datetime.date:
+                from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
+        from_cookies.fillna(value='about:blank', inplace=True)
+        st.session_state.assignments = from_cookies
+    except KeyError:
+        pass
+    try:
+        st.session_state.classrooms = eval(cookies['classes'])
+        st.session_state.bypass_autoload = True
+    except KeyError:
+        st.session_state.bypass_autoload = True
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
 sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete', 'Save/Load'])
@@ -129,15 +150,12 @@ with sidebar_tabs[0]:
             else:
                 st.error('Please enter an original name.')
 
-    st.write('Classes:')
+    st.subheader('Classes:')
     if len(st.session_state.classrooms['Name']) > 0:
         for classroom in st.session_state.classrooms['Name']:
-            count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
-            for assignment in st.session_state.assignments.iterrows():
-                if assignment[1]['class'] == classroom and not assignment[1]['done']:
-                    count += 1
-            if st.session_state.classrooms == True:
+            count = st.session_state.classrooms['Count'][class_index]
+            if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
             else:
                 st.error(f'{classroom}: {count} Assignments')
@@ -183,24 +201,26 @@ for i in menu_list:
     if isinstance(i, int):
         menu_list.remove(i)
     
-class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg').split(':')[0]
-
-
-if st.session_state.reruns> 2:
-    cookies['ass'] = st.session_state.assignments.to_json()
-    cookies.save()
-
-if st.button('Refresh'):
-    from_cookies = pd.read_json(cookies['ass'])
-    for index, row in from_cookies.iterrows():
-        if type(row['due_date']) != datetime.date:
-            from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
-    from_cookies.fillna(value='about:blank', inplace=True)
-    st.session_state.assignments = from_cookies
+class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg', on_change=update_assignments, key=923).split(':')[0]
 
 if class_filter == 'All':
+    remove_completed()
     st.dataframe(st.session_state.assignments, hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
 elif class_filter == 'Edit':
-    st.session_state.assignments = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
+    edited_df = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
 else:
-    st.dataframe(st.session_state.assignments[st.session_state.assignments['class'] == class_filter], hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+    remove_completed()
+    class_index = (st.session_state.classrooms['Name'].index(class_filter))
+    if st.session_state.classrooms['Late Work'][class_index] == True:
+        st.success('Late Work Allowed!')
+    else:
+        st.error('Late Work Not Allowed!')
+    if st.session_state.classrooms['Count'][class_index] > 0:
+        st.dataframe(st.session_state.assignments[st.session_state.assignments['class'] == class_filter], hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+    else:
+        st.info('No assignments for this class.')
+
+if st.session_state.bypass_autoload:
+    cookies['assignments'] = st.session_state.assignments.to_json()
+    cookies['classes'] = str(st.session_state.classrooms)
+    cookies.save()
