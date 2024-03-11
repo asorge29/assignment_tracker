@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
-from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
 from streamlit_card import card
 import streamlit_antd_components as sac
@@ -21,18 +20,28 @@ st.set_page_config(
 
 #functions----------------------------------------------------
 def remove_completed():
+    old_amount = len(st.session_state.assignments)
     for index, assignment in st.session_state.assignments.iterrows():
         if assignment['done']:
             st.session_state.assignments.drop(index, inplace=True)
+    amount_removed = old_amount - len(st.session_state.assignments)
+    if amount_removed > 0:
+        st.toast(f'Removed {amount_removed} assignments.')
+        st.balloons()
+        if len(st.session_state.assignments) == 0:
+            st.toast('Congradulations on completing all your assignments!')
+    else:
+        st.toast('No completed assignments to remove.')
 
 def update_assignments():
-    global edited_df, class_filter
-    try:
-        if class_filter == 'Edit':
-            if edited_df != None:
-                st.session_state.assignments = edited_df
-    except:
-        pass
+    global class_filter
+    if class_filter == 'Edit':
+        if st.session_state.edited_df is not None:
+            st.session_state.assignments = st.session_state.edited_df
+
+def easter_egg():
+    if 'The Ian Function' in st.session_state.classrooms['Name']:
+        rain(emoji='👺', font_size=54, falling_speed=10)
 
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
@@ -40,6 +49,9 @@ if 'classrooms' not in st.session_state:
 
 if 'assignments' not in st.session_state:
     st.session_state.assignments = pd.DataFrame(columns=['title', 'priority', 'due_date', 'time_est', 'class', 'link', 'done', 'overdue', 'late_allowed'])
+
+if 'edited_df' not in st.session_state:
+    st.session_state.edited_df = None
 
 if 'bypass_autoload' not in st.session_state:
     st.session_state.bypass_autoload = False
@@ -102,7 +114,7 @@ for assignment in st.session_state.assignments.iterrows():
     
 for index, assignment in st.session_state.assignments.iterrows():
     if assignment['due_date'] < datetime.date.today():
-        assignment.loc[index, 'overdue'] = True
+       st.session_state.assignments.loc[index, 'overdue'] = True
 
 cookies = CookieManager()
 if not cookies.ready():
@@ -125,7 +137,7 @@ if st.session_state.reruns <=3 and not st.session_state.bypass_autoload and cook
         st.session_state.bypass_autoload = True
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete', 'Save/Load'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete'])
 with sidebar_tabs[0]:
     with st.form('class_form', clear_on_submit=True):
         new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
@@ -201,13 +213,21 @@ for i in menu_list:
     if isinstance(i, int):
         menu_list.remove(i)
     
-class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg', on_change=update_assignments, key=923).split(':')[0]
+class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg', on_change=update_assignments, key=6473).split(':')[0]
 
 if class_filter == 'All':
-    remove_completed()
-    st.dataframe(st.session_state.assignments, hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+    if len(st.session_state.assignments) > 0:
+        remove_completed()
+        st.dataframe(st.session_state.assignments, hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+    else:
+        st.info('Create some assignments to get started!')
+
 elif class_filter == 'Edit':
-    edited_df = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
+    if len(st.session_state.assignments) > 0:       
+        st.session_state.edited_df = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
+    else:
+        st.info('Create some assignments to get started!')
+
 else:
     remove_completed()
     class_index = (st.session_state.classrooms['Name'].index(class_filter))
@@ -224,3 +244,5 @@ if st.session_state.bypass_autoload:
     cookies['assignments'] = st.session_state.assignments.to_json()
     cookies['classes'] = str(st.session_state.classrooms)
     cookies.save()
+
+easter_egg()
