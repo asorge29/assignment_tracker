@@ -39,6 +39,14 @@ def update_assignments():
         if st.session_state.edited_df is not None:
             st.session_state.assignments = st.session_state.edited_df
 
+def delete_classroom(classroom):
+    index = st.session_state.classrooms['Name'].index(classroom)
+    st.session_state.classrooms['Name'].pop(index)
+    st.session_state.classrooms['Late Work'].pop(index)
+    st.session_state.classrooms['Period'].pop(index)
+    st.session_state.classrooms['Count'].pop(index)
+    st.session_state.assignments = st.session_state.assignments[st.session_state.assignments['class'] != classroom]
+
 def easter_egg():
     if 'The Ian Function' in st.session_state.classrooms['Name']:
         rain(emoji='👺', font_size=54, falling_speed=10)
@@ -122,6 +130,12 @@ for index, assignment in st.session_state.assignments.iterrows():
     else:
         st.session_state.assignments.loc[index, 'done'] = True
 
+for index, assignment in st.session_state.assignments.iterrows():
+    if assignment['done'] == False or 0 or 0.0:
+        st.session_state.assignments.loc[index, 'overdue'] = False
+    else:
+        st.session_state.assignments.loc[index, 'overdue'] = True
+
 cookies = CookieManager()
 if not cookies.ready():
     st.stop()
@@ -197,7 +211,7 @@ with sidebar_tabs[1]:
                     if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
                         new_assignment['late_allowed'] = True
                     if len(new_link) < 2:
-                        new_assignment['link'] = 'about:blank'
+                        new_assignment['link'] = ''
                     new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
                     st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(new_classroom)] += 1
                     new_assignment = pd.DataFrame(new_assignment, index=[0])
@@ -206,6 +220,13 @@ with sidebar_tabs[1]:
                     st.error('Please enter a classroom.')
             else:
                 st.error('Please enter a title.')
+
+with sidebar_tabs[2]:
+    with st.form('Delete_form', clear_on_submit=True):
+        class_to_delete = st.selectbox('Choose a class to delete:', st.session_state.classrooms['Name'], help='Which class do you want to delete?', key=1234)
+        if st.form_submit_button('Delete!', help='Delete a class.'):
+            delete_classroom(class_to_delete)
+
 
 st.title('Assignments')
 
@@ -252,4 +273,3 @@ if st.session_state.bypass_autoload:
     cookies.save()
 
 easter_egg()
-print(st.session_state.assignments)
