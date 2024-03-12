@@ -2,7 +2,7 @@
 
 This is a Streamlit web application for tracking assignments. You can use it to manage your assignments by class, priority, due date, and more.
 
-![Fun Graphic](https://www.bing.com/images/create/a-colorful-logo-for-assignment-tracker-web-app/1-65efc118fc854a569d14ad66ef53ee90?id=9aQKPAyyMdnhodkBM%2bkDaw%3d%3d&view=detailv2&idpp=genimg&idpclose=1&thId=OIG3.1pAfC.3jtr_9usGEBwF3&frame=sydedg&FORM=SYDBIC)
+![Fun Graphic](assignment_tracker_graphic)
 
 ### Features
 
