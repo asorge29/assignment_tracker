@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
-import extra_streamlit_components as stx
-from streamlit_option_menu import option_menu
 from streamlit_extras.let_it_rain import rain
+from streamlit_card import card
+import streamlit_antd_components as sac
+from streamlit_cookies_manager import CookieManager
 #page config--------------------------------------------------
 st.set_page_config(
     page_title='Assignment Tracker',
@@ -17,23 +18,12 @@ st.set_page_config(
     }
 )
 
-#init cookie manager------------------------------------------
-@st.cache_resource(experimental_allow_widgets=True)
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
-cookie_manager.get_all()
-
 #functions----------------------------------------------------
-def update_assignments():
-    global data
-    st.session_state.assignments = data.to_dict(orient='records')
-    save_to_cookies(7,8)
-
 def remove_completed():
     old_amount = len(st.session_state.assignments)
-    st.session_state.assignments = [assignment for assignment in st.session_state.assignments if not assignment['done']]
+    for index, assignment in st.session_state.assignments.iterrows():
+        if assignment['done']:
+            st.session_state.assignments.drop(index, inplace=True)
     amount_removed = old_amount - len(st.session_state.assignments)
     if amount_removed > 0:
         st.toast(f'Removed {amount_removed} assignments.')
@@ -43,94 +33,117 @@ def remove_completed():
     else:
         st.toast('No completed assignments to remove.')
 
-def load_from_cookies():
-    try:
-        to_be_loaded = cookie_manager.get('assignments')
-        for assignment in to_be_loaded:
-            if isinstance(assignment['due_date'], str):
-                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        st.session_state.assignments = to_be_loaded
-        st.session_state.classrooms = cookie_manager.get('classes')
-        st.rerun()
-    except TypeError:
-        st.toast('No assignments to load.')
-        
-def save_to_cookies(key1, key2):
-    if len(st.session_state.assignments) > 0 or len(st.session_state.classrooms) > 0:
-        to_be_saved = st.session_state.assignments.copy()
-        for assignment in to_be_saved:
-            if isinstance(assignment['due_date'], datetime.date):
-                assignment['due_date'] = str(assignment['due_date'])
-        if len(to_be_saved) > 0:
-            cookie_manager.set('assignments', to_be_saved, key=key1, expires_at=datetime.datetime.now() + relativedelta(days=365))
-        cookie_manager.set('classes', st.session_state.classrooms, key=key2, expires_at=datetime.datetime.now() + relativedelta(days=365))
-    else:
-        st.toast('No assignments to save.')
-
-def check_saved_status():
-    try:
-        current_save = cookie_manager.get('assignments')
-        for assignment in current_save:
-            if isinstance(assignment['due_date'], str):
-                assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
-        if current_save == st.session_state.assignments:
-            return True
-        else:
-            return False
-    except TypeError:
-        return False
-
-def remove_classroom(classroom):
-    index = st.session_state.classrooms['Name'].index(classroom)
-    st.session_state.classrooms['Name'].pop(index)
-    st.session_state.classrooms['Late Work'].pop(index)
-    st.session_state.classrooms['Period'].pop(index)
-    st.session_state.assignments = [assignment for assignment in st.session_state.assignments if assignment['class'] != classroom]
-    cookie_manager.set('classes', st.session_state.classrooms, key=77, expires_at=datetime.datetime.now() + relativedelta(days=365))
-    st.session_state.bypass_autoload = True
-    st.rerun()
+def update_assignments():
+    global class_filter
+    if class_filter == 'Edit':
+        if st.session_state.edited_df is not None:
+            st.session_state.assignments = st.session_state.edited_df
 
 def easter_egg():
     if 'The Ian Function' in st.session_state.classrooms['Name']:
         rain(emoji='👺', font_size=54, falling_speed=10)
+
 #session state------------------------------------------------
 if 'classrooms' not in st.session_state:
-    st.session_state.classrooms = {"Name":[], 'Late Work':[], 'Period':[]}
+    st.session_state.classrooms = {'Name':[], 'Late Work':[], 'Period':[], 'Count':[]}
 
 if 'assignments' not in st.session_state:
-    st.session_state.assignments = []
+    st.session_state.assignments = pd.DataFrame(columns=['title', 'priority', 'due_date', 'time_est', 'class', 'link', 'done', 'overdue', 'late_allowed'])
+
+if 'edited_df' not in st.session_state:
+    st.session_state.edited_df = None
 
 if 'bypass_autoload' not in st.session_state:
     st.session_state.bypass_autoload = False
 
+if 'reruns' not in st.session_state:
+    st.session_state.reruns = 0
+st.session_state.reruns += 1
+#constants----------------------------------------------------
+COLUMN_CONFIG = {
+    'title':st.column_config.TextColumn(
+        'Title',
+        max_chars=100,
+        help='What is the name of the assignment?',
+        width='medium'
+    ),
+    'priority': st.column_config.SelectboxColumn(
+        'Priority',
+        options=['High', 'Medium', 'Low'],
+        help='How important is this assignment to complete?'
+    ),
+    'link': st.column_config.LinkColumn(
+        'Link',
+        help='Link to this assignment.',
+        width='medium'
+    ),
+    'due_date': st.column_config.DateColumn(
+        'Due Date',
+        help='When is the assignment due?',
+        max_value=(datetime.date.today()+relativedelta(months=6))
+    ),
+    'time_est': st.column_config.NumberColumn(
+        'Time Estimate',
+        help='How long do you think it will take you to complete?',
+        step=5,
+        format='%d minutes'
+    ),
+    'class': st.column_config.SelectboxColumn(
+        'Class',
+        options=st.session_state.classrooms['Name'],
+        help='What class is this assignment for?'
+    ),
+    'done': st.column_config.CheckboxColumn(
+        'Done',
+        help='Is the assignment done?'
+    ),
+    'overdue': st.column_config.CheckboxColumn(
+        'Overdue',
+        help='Is the assignment past its due date?'
+    )
+}
+COLUMN_ORDER = ['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']
+
 #operations---------------------------------------------------
-for assignment in st.session_state.assignments:
-    if isinstance(assignment['due_date'], str):
-        assignment['due_date'] = datetime.datetime.strptime(assignment['due_date'], '%Y-%m-%d').date()
+for i in st.session_state.classrooms['Name']:
+    st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(i)] = len(st.session_state.assignments[st.session_state.assignments['class'] == i])
+
+for assignment in st.session_state.assignments.iterrows():
+    if isinstance(assignment[1]['due_date'], str):
+        assignment[1]['due_date'] = datetime.datetime.strptime(assignment[1]['due_date'], '%Y-%m-%d').date()
     
-for assignment in st.session_state.assignments:
+for index, assignment in st.session_state.assignments.iterrows():
     if assignment['due_date'] < datetime.date.today():
-        assignment['overdue'] = True
+       st.session_state.assignments.loc[index, 'overdue'] = True
 
-for assignment in st.session_state.assignments:
-    if assignment['class'] not in st.session_state.classrooms['Name']:
-        st.session_state.classrooms['Name'].append(assignment['class'])
-        st.session_state.classrooms['Late Work'].append(assignment['late_allowed'])
-        st.session_state.classrooms['Period'].append(assignment['period'])
+for index, assignment in st.session_state.assignments.iterrows():
+    if assignment['done'] == False or 0 or 0.0:
+        st.session_state.assignments.loc[index, 'done'] = False
+    else:
+        st.session_state.assignments.loc[index, 'done'] = True
 
-st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
+cookies = CookieManager()
+if not cookies.ready():
+    st.stop()
 
-if not st.session_state.bypass_autoload:
-    if len(st.session_state.assignments) == 0 and len(st.session_state.classrooms['Name']) == 0 and cookie_manager.get('assignments') is not None:
-        if len(cookie_manager.get('assignments')) > 0 or len(cookie_manager.get('classes')) > 0:
-            load_from_cookies()
-else:
-    save_to_cookies(13,14)
-    st.session_state.bypass_autoload = False
-
+if st.session_state.reruns <=3 and not st.session_state.bypass_autoload and cookies.ready() and len(st.session_state.classrooms['Name']) == 0 and len(st.session_state.assignments) == 0:
+    try:
+        from_cookies = pd.read_json(cookies['assignments'])
+        for index, row in from_cookies.iterrows():
+            if type(row['due_date']) != datetime.date:
+                from_cookies.loc[index, 'due_date'] = datetime.datetime.fromtimestamp(row['due_date']/1000, datetime.timezone.utc).date()
+        from_cookies.fillna(value='about:blank', inplace=True)
+        st.session_state.assignments = from_cookies
+    except KeyError:
+        pass
+    try:
+        st.session_state.classrooms = eval(cookies['classes'])
+        st.session_state.bypass_autoload = True
+    except KeyError:
+        st.session_state.bypass_autoload = True
 #gui----------------------------------------------------------
 st.sidebar.title('Configuration')
-sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete', 'Save/Load'])
+sidebar_tabs = st.sidebar.tabs(['Class', 'Assignment', 'Delete'])
 with sidebar_tabs[0]:
     with st.form('class_form', clear_on_submit=True):
         new_class = st.text_input('Enter Class', max_chars=100, help='Enter the name of the class you want to add.')
@@ -146,8 +159,8 @@ with sidebar_tabs[0]:
                         st.session_state.classrooms['Name'].append(new_class)
                         st.session_state.classrooms['Late Work'].append(late_work)
                         st.session_state.classrooms['Period'].append(new_period)
+                        st.session_state.classrooms['Count'].append(0)
                         st.session_state.classrooms = pd.DataFrame(st.session_state.classrooms).sort_values(by='Period').to_dict(orient='list')
-                        save_to_cookies(9,10)
                     else:
                         st.error('Please enter a name.')
                 else:
@@ -155,14 +168,11 @@ with sidebar_tabs[0]:
             else:
                 st.error('Please enter an original name.')
 
-    st.write('Classes:')
+    st.subheader('Classes:')
     if len(st.session_state.classrooms['Name']) > 0:
         for classroom in st.session_state.classrooms['Name']:
-            count = 0
             class_index = st.session_state.classrooms['Name'].index(classroom)
-            for assignment in st.session_state.assignments:
-                if assignment['class'] == classroom and not assignment['done']:
-                    count += 1
+            count = st.session_state.classrooms['Count'][class_index]
             if st.session_state.classrooms['Late Work'][class_index] == True:
                 st.success(f'{classroom}: {count} Assignments')
             else:
@@ -187,236 +197,59 @@ with sidebar_tabs[1]:
                     if st.session_state.classrooms['Late Work'][st.session_state.classrooms['Name'].index(new_classroom)] == True:
                         new_assignment['late_allowed'] = True
                     if len(new_link) < 2:
-                        new_assignment['link'] = None
+                        new_assignment['link'] = 'about:blank'
                     new_assignment['period'] = st.session_state.classrooms['Period'][st.session_state.classrooms['Name'].index(new_classroom)]
-                    st.session_state.assignments.append(new_assignment)
-                    save_to_cookies(1,2)
+                    st.session_state.classrooms['Count'][st.session_state.classrooms['Name'].index(new_classroom)] += 1
+                    new_assignment = pd.DataFrame(new_assignment, index=[0])
+                    st.session_state.assignments = pd.concat([st.session_state.assignments, new_assignment], ignore_index=True)
                 else:
                     st.error('Please enter a classroom.')
             else:
                 st.error('Please enter a title.')
 
-with sidebar_tabs[2]:
-    to_be_deleted = st.selectbox('Delete Class', st.session_state.classrooms['Name'], help='Delete a class.')
-    if st.button('Delete'):
-        remove_classroom(to_be_deleted)
-    if st.button('Clear All'):
-        st.session_state.classrooms = {'Name':[], 'Late Work':[], 'Period':[]}
-        st.session_state.assignments = []
-        cookie_manager.delete('assignments',key=900)
-        cookie_manager.delete('classes', key=901)
-        st.session_state.bypass_autoload = True
-    st.warning('This will delete all assignments and classes. Thic cannot be undone.', icon='⚠️')
-
-with sidebar_tabs[3]:
-    if st.button('Load Assignments'):
-        load_from_cookies()
-    if st.button('Save Assignments'):
-        save_to_cookies(3,4)
-
-
 st.title('Assignments')
 
-if check_saved_status():
-    st.write('Save status: :white_check_mark:')
-else:
-    st.write('Save status: :warning:')
-
-classroom_list = [None] * 2 * len(st.session_state.classrooms['Name'])
-classroom_list[::2] = st.session_state.classrooms['Name']
-amount_of_assignments = []
-for classroom in st.session_state.classrooms['Name']:
-    count = 0
-    for assignment in st.session_state.assignments:
-        if assignment['class'] == classroom and not assignment['done']:
-            count += 1
-    amount_of_assignments.append(count)
-classroom_list[1::2] = amount_of_assignments
-for index in range(len(classroom_list)):
-    if index % 2 == 0:
-        classroom_list[index] = f'{classroom_list[index]}: {classroom_list[index+1]}'
-for i in classroom_list:
+menu_list = [None] * (2 * len(st.session_state.classrooms['Name']))
+menu_list[::2] = st.session_state.classrooms['Name']
+menu_list[1::2] = st.session_state.classrooms['Count']
+for i in range(len(menu_list)):
+    if i % 2 == 0:
+        menu_list[i] = f'{menu_list[i]}: {menu_list[i+1]}'
+for i in menu_list:
     if isinstance(i, int):
-        classroom_list.remove(i)
-class_filter = option_menu('Select Class:', ['All', 'Edit'] + classroom_list, orientation='horizontal', menu_icon='filter', icons=['list-check', 'pencil']+['list-check']*(len(classroom_list)))
-class_filter = class_filter.split(':')[0]
+        menu_list.remove(i)
+    
+class_filter = sac.segmented(items=['All', 'Edit'] + menu_list, divider=False, use_container_width=True, size='sm', radius='lg', on_change=update_assignments, key=6473).split(':')[0]
 
-if class_filter == 'All' or 'Edit':
+if class_filter == 'All':
     if len(st.session_state.assignments) > 0:
-        data = pd.DataFrame(st.session_state.assignments)
+        remove_completed()
+        st.dataframe(st.session_state.assignments, hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
+    else:
+        st.info('Create some assignments to get started!')
 
-        if class_filter == 'Edit':
-            data = st.data_editor(
-                data,
-                column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                column_config={
-                    'title':st.column_config.TextColumn(
-                        'Title',
-                        max_chars=100,
-                        help='What is the name of the assignment?',
-                        width='medium'
-                    ),
-                    'priority': st.column_config.SelectboxColumn(
-                        'Priority',
-                        options=['High', 'Medium', 'Low'],
-                        help='How important is this assignment to complete?'
-                    ),
-                    'link': st.column_config.Column(
-                        'Link',
-                        help='Link to this assignment.',
-                        width='medium'
-                    ),
-                    'due_date': st.column_config.DateColumn(
-                        'Due Date',
-                        help='When is the assignment due?',
-                        max_value=(datetime.date.today()+relativedelta(months=6))
-                    ),
-                    'time_est': st.column_config.NumberColumn(
-                        'Time Estimate',
-                        help='How long do you think it will take you to complete?',
-                        step=5,
-                        format='%d minutes'
-                    ),
-                    'class': st.column_config.SelectboxColumn(
-                        'Class',
-                        options=st.session_state.classrooms['Name'],
-                        help='What class is this assignment for?'
-                    ),
-                    'done': st.column_config.CheckboxColumn(
-                        'Done',
-                        help='Is the assignment done?'
-                    ),
-                    'overdue': st.column_config.CheckboxColumn(
-                        'Overdue',
-                        help='Is the assignment past its due date?'
-                    )
-                },
-                disabled=['overdue'],
-                hide_index=True
-            )
-            update_assignments()
-
-        else:
-            st.dataframe(
-                data,
-                column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                column_config={
-                    'title':st.column_config.TextColumn(
-                        'Title',
-                        max_chars=100,
-                        help='What is the name of the assignment?',
-                        width='medium'
-                    ),
-                    'priority': st.column_config.SelectboxColumn(
-                        'Priority',
-                        options=['High', 'Medium', 'Low'],
-                        help='How important is this assignment to complete?'
-                    ),
-                    'link': st.column_config.LinkColumn(
-                        'Link',
-                        help='Link to this assignment.',
-                        width='medium'
-                    ),
-                    'due_date': st.column_config.DateColumn(
-                        'Due Date',
-                        help='When is the assignment due?'
-                    ),
-                    'time_est': st.column_config.NumberColumn(
-                        'Time Estimate',
-                        help='How long do you think it will take you to complete?',
-                        step=5,
-                        format='%d minutes'
-                    ),
-                    'class': st.column_config.SelectboxColumn(
-                        'Class',
-                        options=st.session_state.classrooms['Name'],
-                        help='What class is this assignment for?'
-                    ),
-                    'done': st.column_config.CheckboxColumn(
-                        'Done',
-                        help='Is the assignment done?'
-                    ),
-                    'overdue': st.column_config.CheckboxColumn(
-                        'Overdue',
-                        help='Is the assignment past its due date?'
-                    ),
-                },
-                hide_index=True
-            )
-
-            st.button('Remove Completed Assignments', on_click=remove_completed, help='Remove all assignments that are marked as done.')
-
+elif class_filter == 'Edit':
+    if len(st.session_state.assignments) > 0:       
+        st.session_state.edited_df = st.data_editor(st.session_state.assignments, hide_index=True, column_config=COLUMN_CONFIG, disabled=['overdue'], use_container_width=True, column_order=COLUMN_ORDER)
     else:
         st.info('Create some assignments to get started!')
 
 else:
+    remove_completed()
     class_index = (st.session_state.classrooms['Name'].index(class_filter))
     if st.session_state.classrooms['Late Work'][class_index] == True:
         st.success('Late Work Allowed!')
     else:
         st.error('Late Work Not Allowed!')
-
-    has_assignments = False
-    for assignment in st.session_state.assignments:
-        if assignment['class'] == class_filter:
-            has_assignments = True
-            break
-    if has_assignments:
-        data = pd.DataFrame(st.session_state.assignments)
-        filtered_data = data[data['class'] == class_filter]
-
-        st.dataframe(
-            filtered_data,
-            column_order=(['title', 'priority', 'link', 'due_date', 'time_est', 'class', 'done', 'overdue']),
-                column_config={
-                    'title':st.column_config.TextColumn(
-                        'Title',
-                        max_chars=100,
-                        help='What is the name of the assignment?',
-                        width='medium'
-                    ),
-                    'priority': st.column_config.SelectboxColumn(
-                        'Priority',
-                        options=['High', 'Medium', 'Low'],
-                        help='How important is this assignment to complete?'
-                    ),
-                    'link': st.column_config.LinkColumn(
-                        'Link',
-                        help='Link to this assignment.',
-                        width='medium'
-                    ),
-                'due_date': st.column_config.DateColumn(
-                    'Due Date',
-                    help='When is the assignment due?'
-                ),
-                'time_est': st.column_config.NumberColumn(
-                    'Time Estimate',
-                    help='How long do you think it will take you to complete?',
-                    step=5,
-                    format='%d minutes'
-                ),
-                'class': st.column_config.SelectboxColumn(
-                    'Class',
-                    options=st.session_state.classrooms['Name'],
-                    help='What class is this assignment for?'
-                ),
-                'done': st.column_config.CheckboxColumn(
-                    'Done',
-                    help='Is the assignment done?'
-                ),
-                'overdue': st.column_config.CheckboxColumn(
-                    'Overdue',
-                    help='Is the assignment past its due date?'
-                ),
-            },
-            hide_index=True
-        )
-
-        st.button('Remove Completed Assignments', on_click=remove_completed)
-
+    if st.session_state.classrooms['Count'][class_index] > 0:
+        st.dataframe(st.session_state.assignments[st.session_state.assignments['class'] == class_filter], hide_index=True, use_container_width=True, column_order=COLUMN_ORDER, column_config=COLUMN_CONFIG)
     else:
-        st.info('You have no active assignments in this class.')
+        st.info('No assignments for this class.')
 
-if len(st.session_state.assignments) > 0:
-    save_to_cookies(5,6)
+if st.session_state.bypass_autoload:
+    cookies['assignments'] = st.session_state.assignments.to_json()
+    cookies['classes'] = str(st.session_state.classrooms)
+    cookies.save()
+
 easter_egg()
+print(st.session_state.assignments)
