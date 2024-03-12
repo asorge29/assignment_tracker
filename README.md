@@ -4,6 +4,9 @@ This is a Streamlit web application for tracking assignments. You can use it to 
 
 ![Fun Graphic](assignment_tracker_graphic.jpg)
 
+### Link to the App
+[**Access the Assignment Tracker App Here**](https://assignment-tracker.streamlit.app/)
+
 ### Features
 
 - **Class Management**: Add, edit, and delete classes for organizing your assignments.
@@ -26,10 +29,6 @@ This is a Streamlit web application for tracking assignments. You can use it to 
 
 3. **Persistence**:
    - Your data is automatically saved using cookies for persistence across sessions.
-
-### Prominent Link to the App
-
-[**Access the Assignment Tracker App Here**](https://assignment-tracker.streamlit.app/)
 
 ### About
 
