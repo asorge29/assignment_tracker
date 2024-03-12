@@ -1,59 +1,48 @@
-# Assignment Tracker
+## Assignment Tracker
 
-Welcome to the Assignment Tracker GitHub repository! This is a simple web app created for fun and learning purposes, designed to help you keep track of your assignments. Feel free to use it, provide feedback, and enjoy the experience!
+This is a Streamlit web application for tracking assignments. You can use it to manage your assignments by class, priority, due date, and more.
 
-## Table of Contents
-- [Introduction](#assignment-tracker)
-- [Features](#features)
-- [Upcoming Features](#upcoming-features)
-- [Getting Started](#getting-started)
-- [Feedback and Issues](#feedback-and-issues)
-- [Acknowledgments](#acknowledgments)
+(https://www.bing.com/images/create/a-colorful-logo-for-assignment-tracker-web-app/1-65efc118fc854a569d14ad66ef53ee90?id=9aQKPAyyMdnhodkBM%2bkDaw%3d%3d&view=detailv2&idpp=genimg&idpclose=1&thId=OIG3.1pAfC.3jtr_9usGEBwF3&frame=sydedg&FORM=SYDBIC)
 
-## Features
+### Features
 
-- **Create and Manage Classes**: Add your classes, indicate if late work is allowed, and keep track of your assignments for each class.
+- **Class Management**: Add, edit, and delete classes for organizing your assignments.
+- **Assignment Creation**: Create new assignments with titles, priorities, due dates, time estimates, links, and class associations.
+- **Dynamic Filtering**: Filter assignments by class or view all assignments. You can also edit assignments directly.
+- **Late Work Handling**: Track late assignments and manage late work allowances per class.
+- **Persistent Data Storage**: Your assignments and class data are stored using cookies for persistence across sessions.
 
-- **Create and Manage Assignments**: Easily add new assignments, specifying details such as title, priority, due date, time estimate, class, and optional link.
+### How to Use
 
-- **Filter and Edit Assignments**: Filter assignments by class, toggle between edit and view mode, and remove completed assignments.
+1. **Configuration**:
+   - Use the sidebar to manage classes and assignments.
+   - Create classes by providing a name, late work allowance, and period/order.
+   - Add assignments by specifying title, priority, due date, time estimate, class, and optional link.
 
-- **Import/Export Data**: Download your assignment data as a CSV file for backup or import assignments from a CSV file.
+2. **Assignment Tracking**:
+   - Filter assignments by class or view all assignments.
+   - Edit assignments directly if needed.
+   - Track late assignments and late work allowances per class.
 
-## Upcoming Features
+3. **Persistence**:
+   - Your data is automatically saved using cookies for persistence across sessions.
 
-- **Google Sheets Integration**: In the future, Google Sheets integration will be added to enhance collaboration and data accessibility.
+### Prominent Link to the App
 
-## Getting Started
+[**Access the Assignment Tracker App Here**](https://assignment-tracker.streamlit.app/)
 
-To run the Assignment Tracker locally, follow these steps:
+### About
 
-1. Clone the repository:
+I built this application for my own use and as a learning experience. I hope that others find it useful as well.
 
-    ```bash
-    git clone https://github.com/your-username/assignment-tracker.git
-    ```
+### Future Plans
 
-2. Install the required dependencies:
+I plan to add a section for short notes and reminders in the future.
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Support
 
-3. Run the app:
+- [Report a Bug](https://github.com/asorge29/assignment_tracker/issues)
+- [Get Help](https://assignment-tracker.streamlit.app/Tutorial)
+- [About](https://github.com/asorge29/assignment_tracker/blob/main/README.md)
 
-    ```bash
-    streamlit run your_app.py
-    ```
-
-4. Open your browser and navigate to [http://localhost:8501](http://localhost:8501) to use the Assignment Tracker.
-
-## Feedback and Issues
-
-Your feedback is valuable! If you encounter any issues, have suggestions, or want to contribute, please [report them here](https://github.com/BassMaster629/assignment_tracker/issues).
-
-## Acknowledgments
-
-Special thanks to the Streamlit community and the developers of the libraries used in this project.
-
-Enjoy tracking your assignments with Assignment Tracker! 😊
+Enjoy tracking your assignments!
