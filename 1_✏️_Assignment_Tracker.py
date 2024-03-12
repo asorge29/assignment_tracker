@@ -46,6 +46,7 @@ def delete_classroom(classroom):
     st.session_state.classrooms['Period'].pop(index)
     st.session_state.classrooms['Count'].pop(index)
     st.session_state.assignments = st.session_state.assignments[st.session_state.assignments['class'] != classroom]
+    st.rerun()
 
 def easter_egg():
     if 'The Ian Function' in st.session_state.classrooms['Name']:
