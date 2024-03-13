@@ -5,7 +5,7 @@ This is a Streamlit web application for tracking assignments. You can use it to 
 ![Fun Graphic](assignment_tracker_graphic.jpg)
 
 ### Link to the App
-[**Access the Assignment Tracker App Here**](https://assignment-tracker.streamlit.app/)
+[**Access the Assignment Tracker App Here**](https://assignmenttracker.streamlit.app/)
 
 ### Features
 
