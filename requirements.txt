@@ -1,6 +1,8 @@
 streamlit
 pandas
 datetime
-extra-streamlit-components
 streamlit-option-menu
 streamlit-extras
+streamlit-card
+streamlit-antd-components
+streamlit-cookies-manager
