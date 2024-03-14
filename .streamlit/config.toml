@@ -1,12 +1,5 @@
 [theme]
-primaryColor="#b64bff"
-backgroundColor="#21192d"
-secondaryBackgroundColor="#362d41"
-textColor="#f1dcff"
-
-#[theme]
-#primaryColor="#5e81ac"
-#backgroundColor="#2e3440"
-#secondaryBackgroundColor="#3b4252"
-#textColor="#88c0d0"
-#font="serif"
+primaryColor="#5e81ac"
+backgroundColor="#2e3440"
+secondaryBackgroundColor="#3b4252"
+textColor="#88c0d0"
