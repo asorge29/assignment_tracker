@@ -30,8 +30,6 @@ def remove_completed():
         st.balloons()
         if len(st.session_state.assignments) == 0:
             st.toast('Congradulations on completing all your assignments!')
-    else:
-        st.toast('No completed assignments to remove.')
 
 def update_assignments():
     global class_filter
