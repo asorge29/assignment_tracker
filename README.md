@@ -30,6 +30,10 @@ This is a Streamlit web application for tracking assignments. You can use it to 
 3. **Persistence**:
    - Your data is automatically saved using cookies for persistence across sessions.
 
+### Easter Eggs
+
+Watch out for The Ian Function!
+
 ### About
 
 I built this application for my own use and as a learning experience. I hope that others find it useful as well.
